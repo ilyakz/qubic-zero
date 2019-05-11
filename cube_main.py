@@ -15,14 +15,9 @@ args = dotdict({
 
     'checkpoint': './temp/keras_cube/',
     'load_folder_file': ('./temp/keras_cube/', 'best.pth.tar'),
-<<<<<<< HEAD
 
-    
-    'load_model': True,
-=======
-    
     'load_model': False,
->>>>>>> 2e185ec0cbe5669f186510bf8260a5e50bd53eb2
+
 })
 
 if __name__ == "__main__":

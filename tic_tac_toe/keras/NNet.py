@@ -29,7 +29,7 @@ args = dotdict({
     'dropout': 0.3,
     'epochs': 10,
     'batch_size': 64,
-    'cuda': True,
+    'cuda': False,
     'num_channels': 512,
 })
 
@@ -77,6 +77,7 @@ class NNetWrapper(NeuralNet):
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
         filepath = os.path.join(folder, filename)
+        print("load model from ", folder, filename)
         if not os.path.exists(filepath):
             raise("No model in path '{}'".format(filepath))
         self.nnet.model.load_weights(filepath)

@@ -223,10 +223,39 @@ class CubeTicTacToeGame(Game):
 
     def getSymmetries(self, board, pi):
         assert(len(pi) == self.getActionSize())  
-        pi = np.copy(pi)
-        l = [(board, pi)]
-        return l
+        #pi = np.copy(pi)
+        #l = [(board, pi)]
+        #return l
         #return [(board, pi), (board[:,::-1,], pi[::-1])]
+        pi_board = np.reshape(pi[:-1], (self.n * self.n, self.n))
+        
+        li = []
+        n = self.n
+        for i in range(1, 5):
+            for j in [True, False]:
+                for k in range(n):
+                    board_tmp = board[k * n: (k+1) * n]
+                    pi_board_tmp = pi_board[k * n: (k+1) * n]
+                    newB_tmp = np.rot90(board_tmp, i)
+                    newPi_tmp = np.rot90(pi_board_tmp, i)
+                    if j:
+                        newB_tmp = np.fliplr(newB_tmp)
+                        newPi_tmp = np.fliplr(newPi_tmp)
+                    
+                    if(k == 0):
+                        newB1 = newB_tmp
+                        newB2 = newB_tmp
+                        newPi1 = newPi_tmp
+                        newPi2 = newPi_tmp
+                    else:
+                        newB1 = np.concatenate([newB1, newB_tmp])
+                        newPi1 = np.concatenate([newPi1, newPi_tmp])
+                        newB2 = np.concatenate([newB_tmp, newB2])
+                        newPi2 = np.concatenate([newPi_tmp, newPi2])
+                
+                li += [(newB1, list(newPi1.ravel()) + [pi[-1]])] + [(newB2, list(newPi2.ravel()) + [pi[-1]])]
+        #print(li)
+        return li
 
     def stringRepresentation(self, board):
         return board.tostring()

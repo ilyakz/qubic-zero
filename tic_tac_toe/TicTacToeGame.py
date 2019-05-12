@@ -123,6 +123,7 @@ class TicTacToeGame(Game):
                     newB = np.fliplr(newB)
                     newPi = np.fliplr(newPi)
                 li += [(newB, list(newPi.ravel()) + [pi[-1]])]
+        #print(li)
         return li
 
     def stringRepresentation(self, board):

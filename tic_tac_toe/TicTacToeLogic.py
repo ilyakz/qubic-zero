@@ -22,9 +22,10 @@ class Board:
         Подсчитывает количество фигур типа color на доске.
         """
         count = 0
+
         for y in range(self.n):
             for x in range(self.n):
-                if self[x][y] == color:
+                if self[y][x] == color:
                     count += 1
         return count
 
@@ -40,31 +41,11 @@ class Board:
         count = 0
         for y in range(self.n):
             for x in range(self.n):
-                if self[x][y] == color:
+                if self[y][x] == color:
                     count += 1
-                if self[x][y] == -color:
+                if self[y][x] == -color:
                     count -= 1
         return count
-
-    def get_moves_for_square(self):
-        """
-        :param square: tuple(<Int>, <Int>)
-                       координаты клетки, для которой рассчитываются возможные ходы
-
-        :return: moves: <List of tuples(<Int>, <Int>)>
-                        список возможных ходов для клетки square
-
-        Ищем возможные ходы для квадрата square.
-        Возможным ходом является любая незанятая клетка.
-        Такие и ищем . . .
-        """
-        moves = []
-        for i in range(self.n):
-            for j in range(self.n):
-                if self[j][i] == 0:
-                    move = (j, i)
-                    moves.append(move)
-        return moves
 
     def execute_move(self, move, color):
         """
@@ -73,26 +54,61 @@ class Board:
         Ставит в клетку с координатами move фигуру color.
         """
         (x, y) = move
+        assert self[x][y] == 0
         self[x][y] = color
 
     def has_legal_moves(self):
         for y in range(self.n):
             for x in range(self.n):
                 if self[x][y] == 0:
-                    new_moves = self.get_moves_for_square()
-                    if len(new_moves) > 0:
-                        return True
+                    return True
         return False
 
-    def get_legal_moves(self):
+    def get_legal_moves(self, color):
         moves = set()
         for y in range(self.n):
             for x in range(self.n):
                 if self[x][y] == 0:
-                    new_moves = self.get_moves_for_square()
-                    if new_moves:
-                        moves.update(new_moves)
+                    new_moves = (x,y)
+                    moves.add(new_moves)
         return list(moves)
+    
+    def is_win(self, color):
+        """Check whether the given player has collected a triplet in any direction; 
+        @param color (1=white,-1=black)
+        """
+        win = self.n
+        # check y-strips
+        for y in range(self.n):
+            count = 0
+            for x in range(self.n):
+                if self[x][y]==color:
+                    count += 1
+            if count==win:
+                return True
+        # check x-strips
+        for x in range(self.n):
+            count = 0
+            for y in range(self.n):
+                if self[x][y]==color:
+                    count += 1
+            if count==win:
+                return True
+        # check two diagonal strips
+        count = 0
+        for d in range(self.n):
+            if self[d][d]==color:
+                count += 1
+        if count==win:
+            return True
+        count = 0
+        for d in range(self.n):
+            if self[d][self.n-d-1]==color:
+                count += 1
+        if count==win:
+            return True
+        
+        return False
 
     def print_board(self):
         for piece in self.pieces:

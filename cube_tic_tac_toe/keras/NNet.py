@@ -12,7 +12,7 @@ sys.path.append('../../')
 from framework.utils import *
 from utils import Bar, AverageMeter
 from framework.NeuralNet import NeuralNet
-
+from keras.utils import plot_model
 
 import argparse
 from .CubeNNet import CubeNNet as onnet
@@ -32,6 +32,8 @@ class NNetWrapper(NeuralNet):
         self.nnet = onnet(game, args)
         self.board_z, self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
+        #plot_model(self.nnet.model, to_file='model.png')
+        #print(self.nnet.model.summary())
 
     def train(self, examples):
         """
@@ -42,6 +44,7 @@ class NNetWrapper(NeuralNet):
         target_pis = np.asarray(target_pis)
         target_vs = np.asarray(target_vs)
         self.nnet.model.fit(x = input_boards, y = [target_pis, target_vs], batch_size = args.batch_size, epochs = args.epochs)
+        
 
     def predict(self, board):
         """

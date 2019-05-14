@@ -34,7 +34,7 @@ class TicTacToeGame(Game):
         """
         Возвращает кортеж (х, у) с размерностями доски.
         """
-        return self.n, self.n
+        return (self.n, self.n)
 
     def getActionSize(self):
         """
@@ -54,12 +54,12 @@ class TicTacToeGame(Game):
         :return: следующее состояние доски, после совершение действия.
         """
         if action == self.n * self.n:
-            return board, -player
+            return (board, -player)
         b = Board(self.n)
         b.pieces = np.copy(board)
         move = (int(action / self.n), int(action % self.n))
         b.execute_move(move, player)
-        return b.pieces, -player
+        return (b.pieces, -player)
 
     def getValidMoves(self, board, player):
         """
@@ -72,7 +72,7 @@ class TicTacToeGame(Game):
         valids = [0] * self.getActionSize()
         b = Board(self.n)
         b.pieces = np.copy(board)
-        legal_moves = b.get_legal_moves()
+        legal_moves = b.get_legal_moves(player)
         if len(legal_moves) == 0:
             valids[-1] = 1
             return np.array(valids)
@@ -93,21 +93,18 @@ class TicTacToeGame(Game):
         """
         b = Board(self.n)
         b.pieces = np.copy(board)
-        if any([sum(b.pieces[i]) == self.n for i in range(self.n)]) or \
-                any([sum(b.pieces[:, i]) == self.n for i in range(self.n)]) or \
-                sum([b[i][(self.n - 1) - i] for i in range(self.n)]) == self.n or \
-                sum(np.diag(b.pieces)) == self.n:
+        
+        
+        if b.is_win(player):
             return 1
-        elif any([sum(b.pieces[i]) == -self.n for i in range(self.n)]) or \
-                any([sum(b.pieces[:, i]) == -self.n for i in range(self.n)]) or \
-                sum([b[i][(self.n - 1) - i] for i in range(self.n)]) == -self.n or \
-                sum(np.diag(b.pieces)) == -self.n:
+        if b.is_win(-player):
             return -1
-        elif any([b.pieces[i, j] == 0 for i in range(self.n) for j in range(self.n)]):
+        if b.has_legal_moves():
             return 0
-        else:
-            return 1e-4
-
+        # draw has a very little value 
+        return 1e-4
+        
+        
     def getCanonicalForm(self, board, player):
         return player * board
 
@@ -115,6 +112,7 @@ class TicTacToeGame(Game):
         assert(len(pi) == self.n**2+1)
         pi_board = np.reshape(pi[:-1], (self.n, self.n))
         li = []
+        #print(pi_board )
         for i in range(1, 5):
             for j in [True, False]:
                 newB = np.rot90(board, i)
@@ -153,7 +151,7 @@ class TicTacToeGame(Game):
  #удалить после проверки    
  #       print("Print board:", n)
         self.surf.fill((255, 255, 255))
-        TILESIZE = 105
+        TILESIZE = self.tile_size
         for y in range(n):
             for x in range(n):
                 piece = board[y][x]

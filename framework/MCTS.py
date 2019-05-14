@@ -29,10 +29,14 @@ class MCTS():
         """
         for i in range(self.args.numMCTSSims):
             self.search(canonicalBoard)
-
+       # print(canonicalBoard)
         s = self.game.stringRepresentation(canonicalBoard)
+       # print("+")
+       # print(s)
+        #print(np.fromstring(s))
+        #print(self.Nsa)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-
+        #print(counts)
         if temp==0:
             bestA = np.argmax(counts)
             probs = [0]*len(counts)

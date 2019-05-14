@@ -35,13 +35,8 @@ class CubeTicTacToeGame(Game):
         """
         Возвращает кортеж (z , y, x) с размерностями доски.
         """
-        return self.n, self.n, self.n
-    
-    def getImageStackSize(self):
-        """ Returns size of image stack that is used as input to NNet
-            
-        """
-        return 13     
+        return (self.n, self.n, self.n)
+      
 
     def getActionSize(self):
         """
@@ -80,7 +75,7 @@ class CubeTicTacToeGame(Game):
         valids = [0] * self.getActionSize()
         b = Board(self.n)
         b.pieces = np.copy(board)
-        legal_moves = b.get_legal_moves()
+        legal_moves = b.get_legal_moves(player)
         if len(legal_moves) == 0:
             valids[-1] = 1
             return np.array(valids)
@@ -149,6 +144,22 @@ class CubeTicTacToeGame(Game):
         #v = [1] * len(board)
         #return [(board,v)]
         return (valid_moves_pl1, valid_moves_pl2)
+    """
+    def getGameEnded(self, board, player):
+        # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
+        # player = 1
+        b = Board(self.n)
+        b.pieces = np.copy(board)
+
+        if b.is_win(player):
+            return 1
+        if b.is_win(-player):
+            return -1
+        if b.has_legal_moves():
+            return 0
+        # draw has a very little value 
+        return 1e-4
+    """
 
     def getGameEnded(self, board, player):
         """
@@ -228,7 +239,7 @@ class CubeTicTacToeGame(Game):
         #return l
         #return [(board, pi), (board[:,::-1,], pi[::-1])]
         pi_board = np.reshape(pi[:-1], (self.n * self.n, self.n))
-        
+       # print(pi)
         li = []
         n = self.n
         for i in range(1, 5):
@@ -254,10 +265,11 @@ class CubeTicTacToeGame(Game):
                         newPi2 = np.concatenate([newPi_tmp, newPi2])
                 
                 li += [(newB1, list(newPi1.ravel()) + [pi[-1]])] + [(newB2, list(newPi2.ravel()) + [pi[-1]])]
-        #print(li)
+       # print(li)
         return li
 
     def stringRepresentation(self, board):
+        #print(board)
         return board.tostring()
 
     def getScore(self, board, player):

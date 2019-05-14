@@ -33,6 +33,13 @@ class NNetWrapper(NeuralNet):
         with tf.Session() as temp_sess:
             temp_sess.run(tf.global_variables_initializer())
         self.sess.run(tf.variables_initializer(self.nnet.graph.get_collection('variables')))
+        
+        # Сохранение графа модели в лог для просмотра в Tensorboard
+
+        merged = tf.summary.merge_all(key='summaries')
+        if not os.path.exists('tensorboard_logs/'):
+            os.makedirs('tensorboard_logs/')
+        my_writer = tf.summary.FileWriter('tensorboard_logs/', self.sess.graph)
 
     def train(self, examples):
         """

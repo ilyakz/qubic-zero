@@ -18,10 +18,10 @@ class CubeNNet():
         self.input_boards = Input(shape=(self.board_z, self.board_y, self.board_x))    # s: batch_size x board_x x board_y
 
         x_image = Reshape((self.board_z, self.board_y, self.board_x, 1))(self.input_boards)                # batch_size  x board_x x board_y x 1
-        h_conv1 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 4, padding='same')(x_image)))         # batch_size  x board_x x board_y x num_channels
-        h_conv2 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 4, padding='same')(h_conv1)))         # batch_size  x board_x x board_y x num_channels
-        h_conv3 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 4, padding='same')(h_conv2)))        # batch_size  x (board_x) x (board_y) x num_channels
-        h_conv4 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 4, padding='valid')(h_conv3)))        # batch_size  x (board_x-2) x (board_y-2) x num_channels
+        h_conv1 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 3, padding='same')(x_image)))         # batch_size  x board_x x board_y x num_channels
+        h_conv2 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 3, padding='same')(h_conv1)))         # batch_size  x board_x x board_y x num_channels
+        h_conv3 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 3, padding='same')(h_conv2)))        # batch_size  x (board_x) x (board_y) x num_channels
+        h_conv4 = Activation('relu')(BatchNormalization(axis=4)(Conv3D(args.num_channels, 3, padding='valid')(h_conv3)))        # batch_size  x (board_x-2) x (board_y-2) x num_channels
         h_conv4_flat = Flatten()(h_conv4)
             
         s_fc1 = Dropout(args.dropout)(Activation('relu')(BatchNormalization(axis=1)(Dense(1024)(h_conv4_flat))))  # batch_size x 1024

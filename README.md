@@ -14,23 +14,23 @@
         |      | - NeuralNet.py
         |      | - utils.py
         |
-        | - othello
+        | - cube
         |      |
         |      | - images
         |      |     |
-        |      |     | - black.png
-        |      |     | - gray.png
-        |      |     | - white.png
+        |      |     | - circle.bmp
+        |      |     | - cross.bmp
+        |      |     | - empty.png
         |      |
         |      | - keras
         |      |     |
         |      |     | - NNet.py
-        |      |     | - OthelloNNet.py
+        |      |     | - CubeNNet.py
         |      |
-        |      | - OthelloArena.py
-        |      | - OthelloGame.py
-        |      | - OthelloLogic.py
-        |      | - OthelloPlayers.py
+        |      | - CubeArena.py
+        |      | - CubeGame.py
+        |      | - CubeLogic.py
+        |      | - CubePlayers.py
         |
         | - pretrained_models
         |      |
@@ -38,7 +38,7 @@
         |      |     |
         |      |     | - tttmodel_name
         |      |
-        |      | - othello
+        |      | - cube
         |      |     |
         |      |     | - othellomodel_name
         |      
@@ -50,7 +50,7 @@
         |      |     | - cross.bmp
         |      |     | - empty.png
         |      |
-        |      | - tensorflow
+        |      | - keras
         |      |     |
         |      |     | - NNet.py
         |      |     | - TicTacToeNNet.py
@@ -91,10 +91,12 @@
         |      | - misc.py
         |
         | - .gitignore
-        | - main.py
-        | - othello_pit.py
+        | - cube_main.py
+        | - cube_pit.py
         | - README.md
+        | - tic_tac_toe_main.py
         | - tic_tac_toe_pit.py
+        
 
 В корне проекта, в папке
  
@@ -123,24 +125,24 @@
 * *%GameName%NNet* - класс, описывающий конкретную нейронную сеть для конкретной игры.
 
 А так же создать модуль %GameName%_pit.py, в котором будут происходить сражения между агентами.
-Пример того, как это делается, например, для игр реверси и крестики - нолики можно посмотреть в папках 
+Пример того, как это делается, например, для игр Кубик и крестики - нолики можно посмотреть в папках 
     
-    othello\
+    cube\
     tic_tac_toe\
     
 соответственно.
 
 В папках
     
-    othello\images
+    cube\images
     tic_tac_toe\images
     
 хранятся рисунки фигур, используемых в пользовательском интерфейсе.
 
 В папках
 
-    othello\tensorflow
-    tic_tac_toe\tensorflow
+    cube\keras
+    tic_tac_toe\keras
     
 хранятся нейронные сети для игры и обертки для нее.
 Предназначение *%GameName%* - файлов описано выше.
@@ -177,6 +179,7 @@
 * tensorflow (tensorflow-gpu)
 * numpy  
 * pygame
+* keras
 
 Учтите, что если будете использовать tensorflow-gpu, то у вас должен быть видеоадаптер от компании Nvidia.
 

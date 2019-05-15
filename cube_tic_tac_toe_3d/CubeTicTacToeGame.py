@@ -177,18 +177,19 @@ class CubeTicTacToeGame(Game):
         pi_board = np.reshape(pi[:-1], (self.n,self.n, self.n))
        # print(pi)
         li = []
-        n = self.n
-        rot = {(1,0),(2,0),(1,-1),(2,-2)}
-        for k in rot:
+        rot1 = {(1,0),(2,0)}
+        for k in rot1:
             for i in range(1, 5):
-                for j in [True, False]:
-                    newB = np.rot90(board, i, k)
-                    newPi = np.rot90(pi_board, i, k)
-                    if j:
-                        newB = np.fliplr(newB)
-                        newPi = np.fliplr(newPi)
-                    li += [(newB, list(newPi.ravel()) + [pi[-1]])]
-      
+                for m in range(1, 5):
+                    for j in [True, False]:
+                        newB = np.rot90(np.rot90(board, m, (1,-1)), i, k)
+                        newPi = np.rot90(np.rot90(pi_board, m, (1,-1)), i, k)
+                        if j:
+                            newB = np.fliplr(newB)
+                            newPi = np.fliplr(newPi)
+                        li += [(newB, list(newPi.ravel()) + [pi[-1]])]
+        
+        
         #print(li)
        
         return li

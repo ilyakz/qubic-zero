@@ -145,7 +145,7 @@ class CubeTicTacToeGame(Game):
         #v = [1] * len(board)
         #return [(board,v)]
         return (valid_moves_pl1, valid_moves_pl2)
-
+    """
     def getGameEnded(self, board, player):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
@@ -160,6 +160,74 @@ class CubeTicTacToeGame(Game):
             return 0
         # draw has a very little value 
         return 1e-4
+    """
+     
+    def getGameEnded(self, board, player):
+        """
+        Определяет, закончилась ли игра. Если закончилась, то с каким результатом.
+        :param board: Текущая доска.
+        :param player: Текущий игрок.
+
+        :return: 1, если игрок player выиграл,
+                 -1, если игрок player проиграл,
+                 0, если игра не закончилась
+                 1е-4, если ничья.
+        """
+#тут у нас сами правила
+ #требует доработки
+ 
+        b = Board(self.n)
+        b.pieces = np.copy(board)
+        status = 1e-4
+        n = self.n
+        """
+			сумма в строке == ширине строки
+			сумма в столбце == высоте столбца
+			cумма в глубину == равна глубине кубика
+			диагональ побочная
+			главная диагональ
+			диагональ вниз с верхней строки
+			диагональ вниз с нижней строки
+			диагональ вглубь с верхнего левого до нижнего правого в одной строке в глубину
+			диагональ вниз с верхнего правого до нижнего левого в одной строке в глубину
+			диагольналь от верхнего левого до правого нижнего в глубину и в ширину
+			диагональ от верхнего правого до левого нижнего в глубину и в ширину
+			диагональ от (в верхнем слое) нижнего левого до (нижнего слоя) правого верхнего
+            диагональ от (в верхнем слое) нижнего правого до (нижнего слоя) левого верхнего
+		"""	
+        if any([any([sum([b.pieces[k][j][i] for i in range(n)]) == self.n for j in range(n)]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][j][i] for j in range(n)]) == self.n for i in range(n)]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][j][i]for k in range(n)]) == self.n for i in range(n)]) == 1 for j in range(n)]) or \
+                any([any([sum([b.pieces[k][i][i] for i in range(n)]) == self.n]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][(n - 1 - i)][i] for i in range(n)]) == self.n]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][k][i] for k in range(n)]) == self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][(n - 1 - k)][i] for k in range(n)]) == self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][i][k] for k in range(n)]) == self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][i][(n - 1 - k)] for k in range(n)]) == self.n]) == 1 for i in range(n)]) or \
+                sum([b.pieces[k][k][k] for k in range(n)]) == self.n or \
+                sum([b.pieces[k][k][(n - 1 - k)] for k in range(n)]) == self.n or \
+                sum([b.pieces[k][(n - 1 - k)][k] for k in range(n)]) == self.n or \
+                sum([b.pieces[k][(n - 1 - k)][(n - 1 - k)] for k in range(n)]) == self.n :
+            status = 1
+        elif any([any([sum([b.pieces[k][j][i] for i in range(n)]) == -self.n for j in range(n)]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][j][i] for j in range(n)]) == -self.n for i in range(n)]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][j][i] for k in range(n)]) == -self.n for i in range(n)]) == 1 for j in range(n)]) or \
+                any([any([sum([b.pieces[k][i][i] for i in range(n)]) == -self.n]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][(n - 1 - i)][i] for i in range(n)]) == -self.n]) == 1 for k in range(n)]) or \
+                any([any([sum([b.pieces[k][k][i] for k in range(n)]) == -self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][(n - 1 - k)][i] for k in range(n)]) == -self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][i][k] for k in range(n)]) == -self.n]) == 1 for i in range(n)]) or \
+                any([any([sum([b.pieces[k][i][(n - 1 - k)] for k in range(n)]) == -self.n]) == 1 for i in range(n)]) or \
+                sum([b.pieces[k][k][k] for k in range(n)]) == -self.n or \
+                sum([b.pieces[k][k][(n - 1 - k)] for k in range(n)]) == -self.n or \
+                sum([b.pieces[k][(n - 1 - k)][k] for k in range(n)]) == -self.n or \
+                sum([b.pieces[k][(n - 1 - k)][(n - 1 - k)] for k in range(n)]) == -self.n :
+            status = -1
+        if status != 1e-4:
+            return status
+        if any([b.pieces[k][i][j] == 0 for k in range(self.n) for i in range(self.n) for j in range(self.n)]):
+            status = 0
+        return status
 
    
     

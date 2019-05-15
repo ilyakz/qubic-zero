@@ -32,7 +32,7 @@ class NNetWrapper(NeuralNet):
         self.nnet = onnet(game, args)
         self.board_z, self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
-        #plot_model(self.nnet.model, to_file='model.png')
+        plot_model(self.nnet.model, to_file='model.png')
         #print(self.nnet.model.summary())
 
     def train(self, examples):
@@ -54,7 +54,7 @@ class NNetWrapper(NeuralNet):
         start = time.time()
 
         # preparing input
-        board = board[np.newaxis, :, :]
+        board = board[np.newaxis, :, :, :]
 
         # run
         pi, v = self.nnet.model.predict(board)

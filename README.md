@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< a82b5d990d1b998dac8c9307a63369be87514422
-# alpha-game
-AlphaZero  for game with perfect information
-=======
-=======
->>>>>>> 2e185ec0cbe5669f186510bf8260a5e50bd53eb2
+
 # Game AI framework with NNet.
 ## Структура проекта
 Общая структура проекта:
@@ -28,7 +22,7 @@ AlphaZero  for game with perfect information
         |      |     | - gray.png
         |      |     | - white.png
         |      |
-        |      | - tensorflow
+        |      | - keras
         |      |     |
         |      |     | - NNet.py
         |      |     | - OthelloNNet.py

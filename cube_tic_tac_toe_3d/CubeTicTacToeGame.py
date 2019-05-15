@@ -189,7 +189,7 @@ class CubeTicTacToeGame(Game):
                         newPi = np.fliplr(newPi)
                     li += [(newB, list(newPi.ravel()) + [pi[-1]])]
       
-        print(li)
+        #print(li)
        
         return li
 

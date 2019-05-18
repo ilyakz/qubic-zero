@@ -14,9 +14,9 @@ class CubeTicTacToeGame(Game):
         self.score = [0, 0]
         self.n = n
         self.tile_size = 40
-        self.circle = self.load_picture("./cube_tic_tac_toe/images/circle.bmp")
-        self.cross = self.load_picture("./cube_tic_tac_toe/images/cross.bmp")
-        self.gray = self.load_picture("./cube_tic_tac_toe/images/empty.png")
+        self.circle = self.load_picture("./cube_tic_tac_toe_3d/images/circle.bmp")
+        self.cross = self.load_picture("./cube_tic_tac_toe_3d/images/cross.bmp")
+        self.gray = self.load_picture("./cube_tic_tac_toe_3d/images/empty.png")
         self.players = players
         if ui:
             pygame.init()

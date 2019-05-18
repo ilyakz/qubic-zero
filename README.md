@@ -1,5 +1,8 @@
 
 # Game AI framework with NNet.
+
+Оригинал = https://github.com/suragnair/alpha-zero-general
+
 ## Структура проекта
 Общая структура проекта:
 

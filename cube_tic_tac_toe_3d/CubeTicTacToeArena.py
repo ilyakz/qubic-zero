@@ -1,4 +1,8 @@
 from framework.Arena import Arena
+import numpy as np
+from pytorch_classification.utils import Bar, AverageMeter
+import time
+
 
 
 class CubeTicTacToeArena(Arena):
@@ -37,35 +41,58 @@ class CubeTicTacToeArena(Arena):
         return self.game.getGameEnded(board, 1)
 
     def playGames(self, num, verbose=False):
-        num = int(num / 2)
+        """
+        Plays num games in which player1 starts num/2 games and player2 starts
+        num/2 games.
+        Returns:
+            oneWon: games won by player1
+            twoWon: games won by player2
+            draws:  games won by nobody
+        """
+        eps_time = AverageMeter()
+        bar = Bar('Arena.playGames', max=num)
+        end = time.time()
+        eps = 0
+        maxeps = int(num)
+
+        num = int(num/2)
         oneWon = 0
         twoWon = 0
-        self.game.players = (1, -1)
+        draws = 0
         for _ in range(num):
-            game = self.playGame(verbose=verbose)
-           # while(1):
-            #    if(int(input()) == 1):
-             #       break
-            if game == 1:
-                self.game.score[0] += 1
-                oneWon += 1
-            elif game == 1e-4:
-                self.game.score[0] += 0
-                oneWon += 0
+            gameResult = self.playGame(verbose=verbose)
+            if gameResult==1:
+                oneWon+=1
+            elif gameResult==-1:
+                twoWon+=1
             else:
-                self.game.score[1] += 1
-                twoWon += 1
+                draws+=1
+            # bookkeeping + plot progress
+            eps += 1
+            eps_time.update(time.time() - end)
+            end = time.time()
+            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=maxeps, et=eps_time.avg,
+                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
+            bar.next()
+
         self.player1, self.player2 = self.player2, self.player1
-        self.game.players = (-1, 1)
+        
         for _ in range(num):
-            game = self.playGame(verbose=verbose)
-            if game == -1:
-                self.game.score[0] += 1
-                oneWon += 1
-            elif game == 1e-4:
-                self.game.score[0] += 0
-                oneWon += 0
+            gameResult = self.playGame(verbose=verbose)
+            if gameResult==-1:
+                oneWon+=1                
+            elif gameResult==1:
+                twoWon+=1
             else:
-                twoWon += 1
-                self.game.score[1] += 1
-        return oneWon, twoWon
+                draws+=1
+            # bookkeeping + plot progress
+            eps += 1
+            eps_time.update(time.time() - end)
+            end = time.time()
+            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=num, et=eps_time.avg,
+                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
+            bar.next()
+            
+        bar.finish()
+
+        return oneWon, twoWon, draws

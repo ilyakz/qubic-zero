@@ -1,105 +1,10 @@
 
 # Game AI framework with NNet.
 
-Оригинал = https://github.com/suragnair/alpha-zero-general
+Идея и фреймворк были основаны по данной работе https://github.com/suragnair/alpha-zero-general
+В моей работе была сделана модель нейронной сети для игры на трехмерной доске Крестики-ноликики в кубе.
 
 ## Структура проекта
-Общая структура проекта:
-
-    ProjectName
-        |
-        | - framework
-        |      |
-        |      | - Arena.py
-        |      | - Coach.py
-        |      | - Game.py
-        |      | - MCTS.py
-        |      | - NeuralNet.py
-        |      | - utils.py
-        |
-        | - cube
-        |      |
-        |      | - images
-        |      |     |
-        |      |     | - circle.bmp
-        |      |     | - cross.bmp
-        |      |     | - empty.png
-        |      |
-        |      | - keras
-        |      |     |
-        |      |     | - NNet.py
-        |      |     | - CubeNNet.py
-        |      |
-        |      | - CubeArena.py
-        |      | - CubeGame.py
-        |      | - CubeLogic.py
-        |      | - CubePlayers.py
-        |
-        | - pretrained_models
-        |      |
-        |      | - tic_tac_toe
-        |      |     |
-        |      |     | - tttmodel_name
-        |      |
-        |      | - cube
-        |      |     |
-        |      |     | - othellomodel_name
-        |      
-        | - tic_tac_toe
-        |      |
-        |      | - images
-        |      |     |
-        |      |     | - circle.bmp
-        |      |     | - cross.bmp
-        |      |     | - empty.png
-        |      |
-        |      | - keras
-        |      |     |
-        |      |     | - NNet.py
-        |      |     | - TicTacToeNNet.py
-        |      |
-        |      | - TicTacToeArena.py
-        |      | - TicTacToeGame.py
-        |      | - TicTacToeLogic.py
-        |      | - TicTacToePlayers.py
-        |      
-        | - utils
-        |      |
-        |      | - images
-        |      |     |
-        |      |     | - cifar.png
-        |      |     | - imagenet.png
-        |      |
-        |      | - progress
-        |      |     |
-        |      |     | - progress
-        |      |     |      |
-        |      |     |      | - __init__.py
-        |      |     |      | - bar.py
-        |      |     |      | - counter.py
-        |      |     |      | - helpers.py
-        |      |     |      | - spinner.py
-        |      |     |
-        |      |     | - __init__.py
-        |      |     | - demo.gif
-        |      |     | - LICENSE
-        |      |     | - MANIFEST.in
-        |      |     | - README.rst
-        |      |     | - setup.py
-        |      |     | - test_progress.py
-        |      |
-        |      | - __init__.py
-        |      | - eval.py
-        |      | - logger.py
-        |      | - misc.py
-        |
-        | - .gitignore
-        | - cube_main.py
-        | - cube_pit.py
-        | - README.md
-        | - tic_tac_toe_main.py
-        | - tic_tac_toe_pit.py
-        
 
 В корне проекта, в папке
  
@@ -130,21 +35,21 @@
 А так же создать модуль %GameName%_pit.py, в котором будут происходить сражения между агентами.
 Пример того, как это делается, например, для игр Кубик и крестики - нолики можно посмотреть в папках 
     
-    cube\
+    tic_tac_toe_3d\
     tic_tac_toe\
     
 соответственно.
 
 В папках
     
-    cube\images
+    tic_tac_toe_3d\images
     tic_tac_toe\images
     
 хранятся рисунки фигур, используемых в пользовательском интерфейсе.
 
 В папках
 
-    cube\keras
+    tic_tac_toe_3d\keras
     tic_tac_toe\keras
     
 хранятся нейронные сети для игры и обертки для нее.
@@ -153,7 +58,7 @@
 В папках 
 
     pretrained_models\tic_tac_toe
-    pretrained_models\othello
+    pretrained_models\tic_tac_toe_3d
 
 хранятся уже натренированные модели для соответствующих игр. С ними можно играть из коробки.
     
@@ -189,11 +94,10 @@
 ## Выбор архитектуры нейронной сети (Реверси)
 Сверточная нейронная сеть обычно представляет собой чередование сверточных слоев, субдескритизирующих слоев и, при наличии, полносвязных слоев на выходе.
 Выбор архитектуры нейронной сети не самая тривиальная задача в рамках неисследованной задачи.
-Для уменьшенния вычислительной нагрузки и ускорения процесса обучения было решено обучать сеть для игры 6х6.
     
 В процессе выбора архитектуры было опробовано несколько вариантов сетей (различное количество слоев, глобальные параметры: скорость обучения, дропаут и т.д.). 
-В связи с ограниченностью времени было подготовлено 5 различных архитектур(модели не сохранились). 
-Для проверки эффективности сети проводилось 10 итераций обучения для каждой, а затем все сети учавствовали в импровизированном турнире. 
+В связи с ограниченностью времени было подготовлено несколько различных архитектур(модели не сохранились). 
+Для проверки эффективности сети проводилось 5-20 итераций обучения для каждой, а затем все сети учавствовали в импровизированном турнире. 
 По итогу была выбрана архитектура победившей сети.
 
 Архитектура этой сети состоит из четырех последовательных сверточных и двух полносвязных слоев.
@@ -202,8 +106,7 @@
 Визуализация данной архитектуры представлена на рисунке ниже с помощью утилиты tensorboard.
 Информацию о тензорборде можно найти по ссылке: https://www.tensorflow.org/get_started/summaries_and_tensorboard
  
-## Граф сети
-![Структура сети](images/graph.png)
+
 
 ## Полезные ссылки
 Вводная статья на Хабре про tensorflow: 
@@ -229,10 +132,4 @@
 * http://airesearch.com/wp-content/uploads/2016/01/deepmind-mastering-go.pdf
 * https://www.gwern.net/docs/rl/2017-silver.pdf
 
-Вводная статья о сверточных нейронных сетях:
-<<<<<<< HEAD
-* https://habrahabr.ru/post/309508/
->>>>>>> 1-st version
-=======
-* https://habrahabr.ru/post/309508/
->>>>>>> 2e185ec0cbe5669f186510bf8260a5e50bd53eb2
+

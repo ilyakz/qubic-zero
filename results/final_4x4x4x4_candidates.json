@@ -1,0 +1,434 @@
+{
+ "c44": {
+  "board": "4x4x4x4",
+  "iteration": 130,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 197,
+    "draw": 0,
+    "loss": 3,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     97,
+     0,
+     3
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 171,
+    "draw": 0,
+    "loss": 29,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     71,
+     0,
+     29
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 196,
+    "draw": 0,
+    "loss": 4,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     96,
+     0,
+     4
+    ]
+   }
+  }
+ },
+ "c44n": {
+  "board": "4x4x4x4",
+  "iteration": 90,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 156,
+    "draw": 0,
+    "loss": 44,
+    "as_first": [
+     96,
+     0,
+     4
+    ],
+    "as_second": [
+     60,
+     0,
+     40
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 199,
+    "draw": 0,
+    "loss": 1,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     99,
+     0,
+     1
+    ]
+   }
+  }
+ },
+ "c44l": {
+  "board": "4x4x4x4",
+  "iteration": 135,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 199,
+    "draw": 0,
+    "loss": 1,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     99,
+     0,
+     1
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 147,
+    "draw": 0,
+    "loss": 53,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     47,
+     0,
+     53
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 199,
+    "draw": 0,
+    "loss": 1,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     99,
+     0,
+     1
+    ]
+   }
+  }
+ },
+ "c44s": {
+  "board": "4x4x4x4",
+  "iteration": 90,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 199,
+    "draw": 0,
+    "loss": 1,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     99,
+     0,
+     1
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 138,
+    "draw": 0,
+    "loss": 62,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     38,
+     0,
+     62
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 198,
+    "draw": 0,
+    "loss": 2,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     98,
+     0,
+     2
+    ]
+   }
+  }
+ },
+ "n44v2": {
+  "board": "4x4x4x4",
+  "iteration": 110,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 104,
+    "draw": 0,
+    "loss": 96,
+    "as_first": [
+     70,
+     0,
+     30
+    ],
+    "as_second": [
+     34,
+     0,
+     66
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 198,
+    "draw": 0,
+    "loss": 2,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     98,
+     0,
+     2
+    ]
+   }
+  }
+ },
+ "n44": {
+  "board": "4x4x4x4",
+  "iteration": 280,
+  "sims": 100,
+  "pure_sims": 1000,
+  "scores": {
+   "osp": {
+    "games": 200,
+    "win": 200,
+    "draw": 0,
+    "loss": 0,
+    "as_first": [
+     100,
+     0,
+     0
+    ],
+    "as_second": [
+     100,
+     0,
+     0
+    ]
+   },
+   "hsp": {
+    "games": 200,
+    "win": 196,
+    "draw": 0,
+    "loss": 4,
+    "as_first": [
+     99,
+     0,
+     1
+    ],
+    "as_second": [
+     97,
+     0,
+     3
+    ]
+   },
+   "tsp": {
+    "games": 200,
+    "win": 27,
+    "draw": 0,
+    "loss": 173,
+    "as_first": [
+     25,
+     0,
+     75
+    ],
+    "as_second": [
+     2,
+     0,
+     98
+    ]
+   },
+   "pure": {
+    "games": 200,
+    "win": 186,
+    "draw": 0,
+    "loss": 14,
+    "as_first": [
+     99,
+     0,
+     1
+    ],
+    "as_second": [
+     87,
+     0,
+     13
+    ]
+   }
+  }
+ }
+}

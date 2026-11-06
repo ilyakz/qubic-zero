@@ -56,6 +56,7 @@ def main():
     p.add_argument("--games", type=int, default=200)
     p.add_argument("--sims", type=int, default=100)
     p.add_argument("--vcf-budget", type=int, default=400)
+    p.add_argument("--root-safety", type=int, default=0, help="убирать в корне ходы, отдающие серию шахов; бюджет проверки")
     p.add_argument("--seed", type=int, default=1)
     args = p.parse_args()
 
@@ -66,8 +67,8 @@ def main():
     geo = next(iter(loaded.values()))[1]
     for i, a in enumerate(args.runs):
         for b in args.runs[i + 1:]:
-            first = NetAgent(CachedEvaluator(evaluators[a]), args.sims, vcf_budget=args.vcf_budget)
-            second = NetAgent(CachedEvaluator(evaluators[b]), args.sims, vcf_budget=args.vcf_budget)
+            first = NetAgent(CachedEvaluator(evaluators[a]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety)
+            second = NetAgent(CachedEvaluator(evaluators[b]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety)
             s, _ = play_match(first, second, args.games, rng, geo, opening_plies=2)
             rate = 100 * (s["win"] + s["draw"] / 2) / s["games"]
             print(f"{os.path.basename(a.rstrip('/'))} против {os.path.basename(b.rstrip('/'))}: {s['win']} побед, {s['draw']} ничьих, {s['loss']} поражений = {rate:.0f}%"

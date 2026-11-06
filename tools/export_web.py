@@ -24,33 +24,36 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("run")
     p.add_argument("--iter", type=int, default=0, help="взять снимок nets/net_NNNN.pt вместо последней итерации")
+    p.add_argument("--models-dir", default=os.path.join(ROOT, "docs", "models"), help="куда записать модель")
     p.add_argument("--fixtures", default=None, help="записать позиции и ответы сети для проверки версии на JavaScript")
     args = p.parse_args()
 
     with open(os.path.join(args.run, "config.json")) as f:
         cfg = json.load(f)
-    if cfg["arch"] != "linenet":
-        sys.exit("В браузере работает только сеть linenet")
+    if cfg["arch"] not in ("linenet", "conv4d", "conv4d_lines"):
+        sys.exit("В браузере работают сети linenet, conv4d и conv4d_lines")
     geo = geometry(cfg["n"], cfg["d"], cfg.get("k"))
     if args.iter:
         state, iteration = torch.load(os.path.join(args.run, "nets", f"net_{args.iter:04d}.pt"), map_location="cpu", weights_only=True), args.iter
     else:
         checkpoint = torch.load(os.path.join(args.run, "checkpoint.pt"), map_location="cpu", weights_only=True)
         state, iteration = checkpoint["net"], checkpoint["iter"]
-    net = build_net("linenet", geo, cfg["channels"], cfg["blocks"]).eval()
+    net = build_net(cfg["arch"], geo, cfg["channels"], cfg["blocks"]).eval()
     net.load_state_dict(state)
 
+    # таблицу линий браузер строит сам, счётчик шагов нормировки при игре не нужен
+    state = {name: tensor for name, tensor in state.items() if name != "features.incidence" and not name.endswith("num_batches_tracked")}
     params = [{"name": name, "size": int(tensor.numel())} for name, tensor in state.items()]
-    os.makedirs(os.path.join(ROOT, "docs", "models"), exist_ok=True)
-    base = os.path.join(ROOT, "docs", "models", geo.name)
+    os.makedirs(args.models_dir, exist_ok=True)
+    base = os.path.join(args.models_dir, geo.name)
     np.concatenate([tensor.numpy().astype("<f4").ravel() for tensor in state.values()]).tofile(base + ".bin")
     with open(base + ".json", "w") as f:
-        json.dump({"n": cfg["n"], "d": cfg["d"], "k": geo.k, "channels": cfg["channels"], "blocks": cfg["blocks"],
+        json.dump({"arch": cfg["arch"], "n": cfg["n"], "d": cfg["d"], "k": geo.k, "channels": cfg["channels"], "blocks": cfg["blocks"],
                    "iteration": iteration, "params": params}, f)
     print(f"{geo.name}: итерация {iteration}, {sum(q['size'] for q in params):,} весов, {os.path.getsize(base + '.bin') / 1e6:.1f} МБ")
-    index_path = os.path.join(ROOT, "docs", "models", "index.json")
+    index_path = os.path.join(args.models_dir, "index.json")
     index = json.load(open(index_path)) if os.path.exists(index_path) else {}
-    index[geo.name] = {"iteration": iteration, "channels": cfg["channels"], "blocks": cfg["blocks"], "run": os.path.basename(args.run.rstrip("/"))}
+    index[geo.name] = {"arch": cfg["arch"], "iteration": iteration, "channels": cfg["channels"], "blocks": cfg["blocks"], "run": os.path.basename(args.run.rstrip("/"))}
     with open(index_path, "w") as f:
         json.dump(index, f)
 

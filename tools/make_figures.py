@@ -149,6 +149,29 @@ def figure_first_move(run="main"):
     save(fig, "first_move.png")
 
 
+def figure_race():
+    """Гонка сетей на главной доске 4×4×4×4: одна проверка шумная, поэтому среднее по трём."""
+    runs = [("n44", "line network, the first", CONTROL), ("n44v2", "new line network", C1), ("c44", "4D convolutions", C2),
+            ("c44l", "4D convolutions + line hints", C3), ("c44n", "same + tuned noise", C4), ("c44s", "small, in the game", MAIN)]
+    limit = 170
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
+    for ax, title, fn in ((axes[0], "Against the tsp bot, %", win_rate("tsp")), (axes[1], "Against tsp moving second, %", second_rate("tsp"))):
+        for run, name, color in runs:
+            xs, ys = series(metrics(run), fn)
+            if not xs:
+                continue
+            smooth = np.convolve(ys, np.ones(3) / 3, mode="valid")
+            pairs = [(x, y) for x, y in zip(xs[1:-1], smooth) if x <= limit]
+            ax.plot([p[0] for p in pairs], [p[1] for p in pairs], color=color, label=name)
+        ax.set_title(title)
+        ax.set_xlabel("iteration")
+        ax.set_ylim(0, 100)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=10)
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    save(fig, "race_4d.png")
+
+
 def figure_progress(run="main"):
     records = metrics(run)
     if not records:
@@ -177,3 +200,4 @@ if __name__ == "__main__":
     figure_networks()
     figure_first_move()
     figure_progress()
+    figure_race()

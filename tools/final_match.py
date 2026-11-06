@@ -32,6 +32,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("run")
     p.add_argument("--games", type=int, default=500)
+    p.add_argument("--iter", type=int, default=0, help="взять снимок nets/net_NNNN.pt вместо последней итерации")
     p.add_argument("--sims", type=int, default=100)
     p.add_argument("--pure-sims", type=int, default=1000)
     p.add_argument("--vcf-budget", type=int, default=None)
@@ -49,6 +50,9 @@ def main():
     state = torch.load(os.path.join(args.run, "checkpoint.pt"), map_location=device, weights_only=True)
     net = build_net(cfg["arch"], geo, cfg["channels"], cfg["blocks"]).to(device).eval()
     net.load_state_dict(state["net"])
+    if args.iter:
+        net.load_state_dict(torch.load(os.path.join(args.run, "nets", f"net_{args.iter:04d}.pt"), map_location=device, weights_only=True))
+        state["iter"] = args.iter
 
     cfg.update(eval_sims=args.sims, pure_sims=args.pure_sims, workers=args.workers, discount=1.0)
     if args.vcf_budget is not None:

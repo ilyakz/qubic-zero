@@ -4,9 +4,9 @@
 
 **Tic-tac-toe in four dimensions, against a neural network that taught itself.**
 
-[![Play in your browser](https://img.shields.io/badge/%E2%96%B6_Play_in_your_browser-6250d6?style=for-the-badge)](https://ilyakz.github.io/alpha-game2/)
+[![Play in your browser](https://img.shields.io/badge/%E2%96%B6_Play_in_your_browser-6250d6?style=for-the-badge)](https://ilyakz.github.io/qubic-zero/)
 
-[![Tests](https://github.com/ilyakz/alpha-game2/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyakz/alpha-game2/actions/workflows/tests.yml)
+[![Tests](https://github.com/ilyakz/qubic-zero/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyakz/qubic-zero/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2-ee4c2c)
@@ -58,7 +58,7 @@ The largest network is the strongest against `tsp`, yet the small one beats it h
 
 ## The story
 
-In May 2019 I wrote an AlphaZero for 4×4×4 tic-tac-toe on Keras and TensorFlow 1. It never played well: 60% against a bot that moves randomly unless it can win or block, and 35% against a simple heuristic. I could not find out why. The [commit history](https://github.com/ilyakz/alpha-game2/commits/master/) of this repository still starts there, on 10 May 2019, and the code from that time is kept in [`legacy/`](legacy/).
+In May 2019 I wrote an AlphaZero for 4×4×4 tic-tac-toe on Keras and TensorFlow 1. It never played well: 60% against a bot that moves randomly unless it can win or block, and 35% against a simple heuristic. I could not find out why. The [commit history](https://github.com/ilyakz/qubic-zero/commits/master/) of this repository still starts there, on 10 May 2019, and the code from that time is kept in [`legacy/`](legacy/).
 
 Seven years later I came back to the code with one goal: find the error and finish the job. It turned out to be a single line, and the training data saved in 2019 proved it.
 

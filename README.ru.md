@@ -4,9 +4,9 @@
 
 **Крестики-нолики в четырёх измерениях против нейросети, которая научилась играть сама.**
 
-[![Играть в браузере](https://img.shields.io/badge/%E2%96%B6_%D0%98%D0%B3%D1%80%D0%B0%D1%82%D1%8C_%D0%B2_%D0%B1%D1%80%D0%B0%D1%83%D0%B7%D0%B5%D1%80%D0%B5-6250d6?style=for-the-badge)](https://ilyakz.github.io/alpha-game2/)
+[![Играть в браузере](https://img.shields.io/badge/%E2%96%B6_%D0%98%D0%B3%D1%80%D0%B0%D1%82%D1%8C_%D0%B2_%D0%B1%D1%80%D0%B0%D1%83%D0%B7%D0%B5%D1%80%D0%B5-6250d6?style=for-the-badge)](https://ilyakz.github.io/qubic-zero/)
 
-[![Tests](https://github.com/ilyakz/alpha-game2/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyakz/alpha-game2/actions/workflows/tests.yml)
+[![Tests](https://github.com/ilyakz/qubic-zero/actions/workflows/tests.yml/badge.svg)](https://github.com/ilyakz/qubic-zero/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2-ee4c2c)
@@ -58,7 +58,7 @@
 
 ## История
 
-В мае 2019 года я написал AlphaZero для крестиков-ноликов 4×4×4 на Keras и TensorFlow 1. Играла сеть плохо: 60% против бота, который ходит случайно, если не может выиграть или закрыть линию, и 35% против простой эвристики. Причину я тогда не нашёл. [История коммитов](https://github.com/ilyakz/alpha-game2/commits/master/) этого репозитория до сих пор начинается оттуда, с 10 мая 2019 года, а код того времени лежит в [`legacy/`](legacy/).
+В мае 2019 года я написал AlphaZero для крестиков-ноликов 4×4×4 на Keras и TensorFlow 1. Играла сеть плохо: 60% против бота, который ходит случайно, если не может выиграть или закрыть линию, и 35% против простой эвристики. Причину я тогда не нашёл. [История коммитов](https://github.com/ilyakz/qubic-zero/commits/master/) этого репозитория до сих пор начинается оттуда, с 10 мая 2019 года, а код того времени лежит в [`legacy/`](legacy/).
 
 Через семь лет я вернулся к этому коду с одной целью: найти ошибку и довести работу до конца. Ошибка оказалась в одной строке, и обучающие данные, сохранённые в 2019 году, это доказали.
 

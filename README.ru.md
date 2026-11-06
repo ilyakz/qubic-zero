@@ -174,3 +174,5 @@ python -m unittest discover -s tests && node tests/test_web.js
 ## Благодарности
 
 Проект вырос из [alpha-zero-general](https://github.com/suragnair/alpha-zero-general) Сурага Наира и соавторов: на нём построен код 2019 года в `legacy/`. Всё остальное написано с нуля и распространяется по [лицензии MIT](LICENSE). Подробнее в [файле о сторонних компонентах](THIRD_PARTY_NOTICES.md).
+
+Спасибо [Anthropic](https://www.anthropic.com) и [Claude Code](https://claude.com/claude-code) с моделью Claude Opus 5.5: они помогли мне закончить эту старую работу и получить такие результаты.

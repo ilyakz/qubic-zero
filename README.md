@@ -174,3 +174,5 @@ The search and the training loop follow AlphaZero. The main additions: the leave
 ## Credits
 
 This project started from [alpha-zero-general](https://github.com/suragnair/alpha-zero-general) by Surag Nair and contributors: the 2019 code in `legacy/` is built on it. Everything else was written from scratch and is under the [MIT license](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for the details.
+
+Thanks to [Anthropic](https://www.anthropic.com) and [Claude Code](https://claude.com/claude-code) with the Claude Opus 5.5 model, which helped me finish this old project and reach these results.

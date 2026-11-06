@@ -1,0 +1,163 @@
+{
+  "labels_2019": {
+    "file": "temp/keras_cube/checkpoint_0.pth.tar.examples",
+    "examples": 11376,
+    "x_to_move_label": -1,
+    "o_to_move_label": 1
+  },
+  "search_depth_2019": {
+    "sims": [
+      25,
+      100,
+      200
+    ],
+    "wins_of_100": [
+      40,
+      33,
+      41
+    ]
+  },
+  "tree_vcf": {
+    "note": "same weights, 100 simulations, 60 games per row",
+    "vs_tsp": [
+      {
+        "budget": 0,
+        "rate": 47
+      },
+      {
+        "budget": 40,
+        "rate": 77
+      },
+      {
+        "budget": 150,
+        "rate": 88
+      }
+    ],
+    "budget_400_100_games_vs_tsp": 90,
+    "head_to_head_vs_no_check": [
+      {
+        "budget": 40,
+        "rate": 65
+      },
+      {
+        "budget": 150,
+        "rate": 73
+      },
+      {
+        "budget": 400,
+        "rate": 84
+      }
+    ]
+  },
+  "networks_40_iterations": {
+    "games": 200,
+    "results": [
+      {
+        "a": "сеть на линиях, 0,4 млн весов",
+        "b": "свёртки + признаки линий, 3,1 млн",
+        "win": 101,
+        "draw": 6,
+        "loss": 93
+      },
+      {
+        "a": "сеть на линиях, 0,4 млн весов",
+        "b": "сеть 2019 года, 8 млн",
+        "win": 135,
+        "draw": 0,
+        "loss": 65
+      },
+      {
+        "a": "свёртки + признаки линий, 3,1 млн",
+        "b": "сеть 2019 года, 8 млн",
+        "win": 133,
+        "draw": 0,
+        "loss": 67
+      },
+      {
+        "a": "сеть на линиях, 0,4 млн весов",
+        "b": "сеть на линиях 64×4, 0,1 млн",
+        "win": 127,
+        "draw": 0,
+        "loss": 73
+      },
+      {
+        "a": "сеть на линиях 64×4, 0,1 млн",
+        "b": "свёртки + признаки линий, 3,1 млн",
+        "win": 78,
+        "draw": 10,
+        "loss": 112
+      }
+    ]
+  },
+  "random_openings": {
+    "games": 300,
+    "a": "обычные начала",
+    "b": "случайные начала",
+    "win": 149,
+    "draw": 4,
+    "loss": 147
+  },
+  "proof_propagation": {
+    "games": 100,
+    "win": 52,
+    "draw": 0,
+    "loss": 48
+  },
+  "search_depth_now": [
+    {
+      "sims": 100,
+      "vs_tsp": 100,
+      "vs_pure": 92
+    },
+    {
+      "sims": 400,
+      "vs_tsp": 93,
+      "vs_pure": 88
+    },
+    {
+      "sims": 1600,
+      "vs_tsp": 95,
+      "vs_pure": 95
+    }
+  ],
+  "exact_3x3x3": {
+    "decisions": 372613,
+    "blunders": 0,
+    "winning_first_moves": [
+      13
+    ],
+    "note": "only the centre wins on an empty board"
+  },
+  "discount": {
+    "games": 200,
+    "a": "without discount",
+    "b": "near wins worth more, 16 extra iterations",
+    "win": 96,
+    "draw": 6,
+    "loss": 98
+  },
+  "line_vs_conv_final": {
+    "games": 200,
+    "a": "line network, iteration 150",
+    "b": "convolutions + line features, iteration 124",
+    "win": 98,
+    "draw": 11,
+    "loss": 91
+  },
+  "root_safety": {
+    "note": "same weights, 100 simulations, 60 games against tsp on 4x4x4x4",
+    "without": 1.7,
+    "with": 20.0
+  },
+  "boards": {
+    "3x3x3": {
+      "self_play_note": "exact solver: 0 mistakes in 372613 decisions"
+    },
+    "5x5x5": {
+      "self_play_draws_of_128": 125
+    },
+    "4x4x4x4": {
+      "self_play_first_wins_of_128": 128
+    }
+  }
+}

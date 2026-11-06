@@ -1,0 +1,16 @@
+#chanels=256 mcts = 200 lr = 0.0001 batch= 128
+args = dotdict({
+    'numIters': 1000, 
+    'numEps': 100, #ÃƒÂÃ‚Â±Ãƒâ€˜Ã¢â‚¬Â¹ÃƒÂÃ‚Â»ÃƒÂÃ‚Â¾ 100
+    'tempThreshold': 15,
+    'updateThreshold': 0.55,
+    'maxlenOfQueue': 200000,
+    'numMCTSSims': 200,#50
+    'arenaCompare': 40, #40
+    'cpuct': 1,
+
+    'checkpoint': './temp/keras_cube3d/',
+    'load_folder_file': ('./temp/keras_cube3d/', 'best.pth.tar'),
+    'numItersForTrainExamplesHistory': 5,
+    'load_model': True,
+})

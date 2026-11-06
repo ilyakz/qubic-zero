@@ -14,6 +14,7 @@ RESULTS = os.path.join(HERE, "..", "results", "findings.json")
 MATCHES = os.path.join(HERE, "..", "results", "matches.json")
 MODELS = os.path.join(HERE, "..", "docs", "models", "index.json")
 _gpu_cache = {"at": 0.0, "data": None}
+_system_cache = {"at": 0.0, "data": None, "times": None}
 _summaries = {}
 
 
@@ -59,6 +60,62 @@ def gpu_state():
         except Exception:
             _gpu_cache["data"] = None
     return _gpu_cache["data"]
+
+
+def cpu_times():
+    """Для каждого процессора из /proc/stat: всего тиков и сколько из них простой."""
+    times = {}
+    with open("/proc/stat") as f:
+        for line in f:
+            if not line.startswith("cpu"):
+                break
+            parts = line.split()
+            values = [int(v) for v in parts[1:9]]
+            times[parts[0]] = (sum(values), values[3] + values[4])
+    return times
+
+
+def busy_share(now, before):
+    total = now[0] - before[0]
+    return round(100 * (1 - (now[1] - before[1]) / total), 1) if total > 0 else 0.0
+
+
+def physical_cores():
+    pairs, physical = set(), None
+    with open("/proc/cpuinfo") as f:
+        for line in f:
+            key, _, value = line.partition(":")
+            key = key.strip()
+            if key == "physical id":
+                physical = value.strip()
+            elif key == "core id":
+                pairs.add((physical, value.strip()))
+    return len(pairs) or None
+
+
+def system_state():
+    """Загрузка процессора и памяти по данным /proc: на других системах показать нечего."""
+    if time.time() - _system_cache["at"] < 2:
+        return _system_cache["data"]
+    _system_cache["at"] = time.time()
+    try:
+        times = cpu_times()
+        before = _system_cache["times"] or {name: (0, 0) for name in times}
+        _system_cache["times"] = times
+        memory = {}
+        with open("/proc/meminfo") as f:
+            for line in f:
+                key, _, value = line.partition(":")
+                memory[key] = int(value.split()[0]) / 1024 ** 2  # ГБ
+        names = sorted((n for n in times if n != "cpu"), key=lambda n: int(n[3:]))
+        _system_cache["data"] = {
+            "cpu": busy_share(times["cpu"], before["cpu"]), "per_core": [busy_share(times[n], before[n]) for n in names],
+            "load": round(os.getloadavg()[0], 1), "threads": len(names), "cores": physical_cores(),
+            "ram_total": round(memory["MemTotal"], 1), "ram_used": round(memory["MemTotal"] - memory["MemAvailable"], 1),
+            "swap_total": round(memory.get("SwapTotal", 0), 1), "swap_used": round(memory.get("SwapTotal", 0) - memory.get("SwapFree", 0), 1)}
+    except (OSError, ValueError, KeyError, IndexError):
+        _system_cache["data"] = None
+    return _system_cache["data"]
 
 
 def run_names():
@@ -163,7 +220,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"now": time.time(), "gpu": gpu_state(), "statuses": statuses,
                         "run": run_state(wanted) if wanted in names else None})
         elif url.path == "/api/overview":
-            self._json({"now": time.time(), "gpu": gpu_state(), "runs": [s for s in map(run_summary, run_names()) if s],
+            self._json({"now": time.time(), "gpu": gpu_state(), "system": system_state(), "runs": [s for s in map(run_summary, run_names()) if s],
                         "models": read_json(MODELS) or {}, "matches": read_json(MATCHES) or []})
         elif url.path == "/api/experiments":
             self._json({"findings": read_json(RESULTS), "runs": {name: run_state(name) for name in run_names()}})

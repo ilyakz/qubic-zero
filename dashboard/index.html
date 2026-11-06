@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qubic Zero: обучение</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f6f6f3; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #6f6d68;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --main: #6250d6; --control: #898781;
+  --critical: #d03b3b; --on: #0ca30c; --cell: #eeede8; --track: #e8e7e1; --win: #0b0b0b; --x: #2a78d6; --o: #eb6834;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #9a988f;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10);
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --main: #9085e9; --control: #898781;
+    --cell: #2c2c2a; --track: #2c2c2a; --win: #f0efec; --x: #3987e5; --o: #d95926;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 24px; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 30px 0 12px; font-weight: 650; }
+h3 { font-size: 14.5px; margin: 0; font-weight: 600; }
+.top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { font: inherit; font-size: 13.5px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; gap: 7px; align-items: center; }
+.seg button:hover { background: var(--track); }
+.seg button[aria-pressed="true"] { background: var(--main); border-color: var(--main); color: #fff; font-weight: 600; }
+.top-right { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.summary { color: var(--ink2); font-size: 14px; margin: 2px 0 8px; }
+#overview tr[data-run], #archive tr[data-run] { cursor: pointer; }
+#overview tr[data-run]:hover, #archive tr[data-run]:hover { background: var(--track); }
+tr.picked { background: var(--track); box-shadow: inset 3px 0 0 var(--main); }
+td .sub { display: block; color: var(--muted); font-size: 12px; }
+td.state { white-space: nowrap; }
+td.state .dot { margin-right: 6px; }
+.badge { display: inline-block; padding: 0 6px; border-radius: 99px; background: var(--main); color: #fff; font-size: 11px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 2px; font-size: 13px; color: var(--ink2); }
+.chips label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.chips i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; background: var(--axis); }
+.c3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.compare-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.detail-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 30px 0 10px; }
+.detail-head h2 { margin: 0; }
+.detail-head > div { display: flex; gap: 12px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.dot.running { background: var(--on); animation: pulse 2s infinite; }
+.dot.crashed { background: var(--critical); }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .dot.running { animation: none; } }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+.verdict { font-size: 17px; line-height: 1.45; margin: 0 0 14px; max-width: 980px; }
+.progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 24px; margin-top: 14px; }
+.label { color: var(--ink2); font-size: 13px; }
+.value { font-size: 17px; font-weight: 600; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.steps b { padding: 3px 11px; border-radius: 99px; font-weight: 500; background: var(--track); }
+.steps b.active { background: var(--main); color: #fff; font-weight: 600; }
+.bar { height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; margin: 10px 0 6px; }
+.bar div { height: 100%; background: var(--main); border-radius: 4px; transition: width .6s; }
+.stats { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.stat .big { font-size: 28px; font-weight: 650; line-height: 1.2; margin-top: 2px; }
+.stat.hero .big { font-size: 50px; }
+.stat .note { color: var(--ink2); font-size: 13px; margin-top: 4px; }
+.charts { display: grid; gap: 12px; }
+.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.chart-note { color: var(--ink2); font-size: 13px; margin: 2px 0 8px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.tip { position: absolute; pointer-events: none; z-index: 5; background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0,0,0,.14); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 26px 0; text-align: center; }
+.boards { display: grid; gap: 10px; }
+.layer-title { font-size: 12px; color: var(--ink2); margin-bottom: 3px; }
+.layer { display: grid; gap: 2px; }
+.layer div { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: var(--cell); font-size: 11px; font-variant-numeric: tabular-nums; min-width: 0; }
+.layer .x { background: var(--x); color: #fff; font-weight: 700; }
+.layer .o { background: var(--o); color: #fff; font-weight: 700; }
+.layer .won { box-shadow: 0 0 0 1px var(--surface), 0 0 0 3px var(--win); z-index: 1; position: relative; }
+.layer .lastmove { outline: 2px solid var(--win); outline-offset: -2px; }
+.game-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 13.5px; color: var(--ink2); flex-wrap: wrap; }
+.game-row input { flex: 1; min-width: 140px; }
+button.plain { font: inherit; font-size: 13.5px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.plain:hover { background: var(--track); }
+button.plain:disabled { opacity: .55; cursor: default; }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); margin-top: 10px; }
+.scale i { width: 120px; height: 8px; border-radius: 4px; }
+.hint { color: var(--ink2); font-size: 13px; margin-top: 8px; }
+.err { color: var(--critical); font-size: 13px; white-space: pre-wrap; margin-top: 10px; max-height: 200px; overflow: auto; }
+details summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { font-weight: 600; color: var(--ink2); }
+td.name, th.name { text-align: left; white-space: normal; }
+.findings { display: grid; gap: 12px; }
+.finding h3 { font-size: 15px; margin-bottom: 4px; }
+.finding p { margin: 0 0 8px; font-size: 13.5px; color: var(--ink2); }
+@media (max-width: 960px) { .c4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 680px) { .c2, .c4 { grid-template-columns: minmax(0, 1fr); } .stat.hero .big { font-size: 38px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Qubic Zero: обучение</h1>
+    <div class="top-right">
+      <span id="gpu">Видеокарта: нет данных</span>
+      <span class="pill"><span class="dot" id="live-dot"></span><span id="live-text">Загрузка…</span></span>
+    </div>
+  </div>
+
+  <h2>Сейчас</h2>
+  <section class="card">
+    <div class="summary" id="summary"></div>
+    <div class="table-wrap"><table id="overview"></table></div>
+    <details id="archive-box" style="margin-top:12px">
+      <summary id="archive-title">Остальные запуски</summary>
+      <div class="table-wrap"><table id="archive"></table></div>
+    </details>
+  </section>
+
+  <div class="compare-head" style="margin:30px 0 10px">
+    <h2 style="margin:0">Сравнение сетей на одной доске</h2>
+    <div class="seg" id="compare-range"></div>
+  </div>
+  <div class="seg" id="compare-boards"></div>
+  <div class="chips" id="compare-runs"></div>
+  <div class="charts c3" style="margin-top:10px">
+    <div class="card"><h3>Против бота tsp, %</h3><div class="chart" id="c-cmp-tsp"></div></div>
+    <div class="card"><h3>Против tsp вторым ходом, %</h3><div class="chart" id="c-cmp-second"></div></div>
+    <div class="card"><h3>Против поиска без сети, %</h3><div class="chart" id="c-cmp-pure"></div></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>Прямые матчи</h3>
+    <div class="chart-note">Сети играют друг с другом. Счёт: победы, ничьи и поражения первой из пары.</div>
+    <div class="table-wrap"><table id="matches"></table></div>
+  </div>
+
+  <div class="detail-head">
+    <h2 id="detail-title">Выбранный запуск</h2>
+    <div>
+      <span class="pill" id="pill"><span class="dot" id="pill-dot"></span><span id="pill-text"></span></span>
+      <button class="plain" id="stop" hidden>Остановить этот запуск</button>
+    </div>
+  </div>
+  <p class="verdict" id="verdict"></p>
+
+  <section class="card">
+    <div class="steps" id="steps"></div>
+    <div class="bar"><div id="bar" style="width:0"></div></div>
+    <div class="label" id="phase-text"></div>
+    <div class="progress-grid">
+      <div><div class="label">Итерация</div><div class="value" id="iter">—</div></div>
+      <div><div class="label">Идёт уже</div><div class="value" id="elapsed">—</div></div>
+      <div><div class="label">Одна итерация</div><div class="value" id="iter-time">—</div></div>
+      <div><div class="label" id="eta-label">Остановится</div><div class="value" id="eta">—</div></div>
+      <div><div class="label">Симуляций в секунду</div><div class="value" id="speed">—</div></div>
+      <div id="plateau-box" hidden><div class="label">Лучшая версия</div><div class="value" id="plateau">—</div></div>
+    </div>
+    <div class="err" id="error" hidden></div>
+    <div class="hint" id="hint" hidden></div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <h2>Становится ли сеть сильнее</h2>
+  <div class="charts">
+    <div class="card">
+      <h3>Доля побед над соперниками, %</h3>
+      <div class="chart-note" id="bots-note"></div>
+      <div class="chart" id="c-bots"></div>
+    </div>
+  </div>
+  <div class="charts c2" style="margin-top:12px">
+    <div class="card">
+      <h3>Игра вторым номером, % побед</h3>
+      <div class="chart-note">Если у первого игрока большое преимущество, настоящая сила видна прежде всего здесь.</div>
+      <div class="chart" id="c-second"></div>
+    </div>
+    <div class="card">
+      <h3>Оценка позиции против простого правила, %</h3>
+      <div class="chart-note">Правило «всегда ставить на первого» и так угадывает много партий. Сеть понимает позицию, только если её линия заметно выше серой.</div>
+      <div class="chart" id="c-value"></div>
+    </div>
+  </div>
+
+  <h2>Как идёт обучение</h2>
+  <div class="charts c4">
+    <div class="card"><h3>Ошибка политики</h3><div class="chart-note">Насколько сеть расходится с поиском в выборе хода.</div><div class="chart" id="c-ploss"></div></div>
+    <div class="card"><h3>Ошибка оценки</h3><div class="chart-note">Насколько оценка расходится с исходом партии.</div><div class="chart" id="c-vloss"></div></div>
+    <div class="card"><h3>Первый выигрывает, %</h3><div class="chart-note">Доля побед первого игрока в партиях сети с собой.</div><div class="chart" id="c-xwin"></div></div>
+    <div class="card"><h3>Длина партии, ходов</h3><div class="chart-note">Партия обрывается, как только найдена форсированная победа.</div><div class="chart" id="c-len"></div></div>
+  </div>
+
+  <h2>Как она играет</h2>
+  <div class="charts c2">
+    <div class="card">
+      <h3 id="game-title">Последняя партия</h3>
+      <div class="game-row">
+        <button class="plain" id="g-play">▶</button>
+        <input id="g-slider" type="range" min="0" max="0" value="0" aria-label="Номер хода">
+        <span id="g-step"></span>
+      </div>
+      <div class="boards" id="game-board"></div>
+      <div class="hint" id="game-note"></div>
+    </div>
+    <div class="card">
+      <h3>Куда сеть хочет сделать первый ход, %</h3>
+      <div class="hint" style="margin:2px 0 10px">Никто не объяснял сети, какие клетки ценнее. Обычно сильнее те, через которые проходит больше линий, и хорошая сеть должна сама прийти к ним.</div>
+      <div class="boards" id="first-move"></div>
+      <div class="scale"><span>0</span><i id="fm-scale"></i><span id="fm-max"></span></div>
+      <div class="hint" id="fm-value"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <details>
+      <summary>Таблица всех итераций этого запуска</summary>
+      <div class="table-wrap"><table id="table"></table></div>
+    </details>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <details id="findings-box">
+      <summary>Что показали прошлые эксперименты</summary>
+      <div class="findings" id="findings" style="margin-top:10px"></div>
+    </details>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const V2019 = { hsp: 35, osp: 60 };
+const NAMES = { pure: 'поиск без сети', tsp: 'tsp', hsp: 'hsp, эвристика', osp: 'osp, простой' };
+const COLORS = { pure: 'var(--c1)', tsp: 'var(--c2)', hsp: 'var(--c3)', osp: 'var(--c4)', main: 'var(--main)', control: 'var(--control)' };
+const PHASES = {
+  starting: 'Запуск процессов', baseline: 'Проверка необученной сети, чтобы было с чем сравнивать',
+  selfplay: 'Сеть играет сама с собой', training: 'Сеть учится на сыгранных партиях', evaluation: 'Проверка силы против соперников',
+};
+const ARCHS = { linenet: 'сеть на линиях', linenet2: 'новая сеть на линиях', conv4d: '4D-свёртки', conv4d_lines: '4D-свёртки и подсказки о линиях', hybrid: 'гибрид свёрток и линий', conv2d: 'свёртки', resnet: '3D-свёртки', lines: '3D-свёртки и линии', net2019: 'сеть 2019 года' };
+const STATES = { running: 'идёт', stopped: 'остановлен', finished: 'завершён', crashed: 'сбой', plateau: 'плато' };
+const STAGES = { starting: 'запуск', baseline: 'первая проверка', selfplay: 'самоигра', training: 'обучение', evaluation: 'проверка силы' };
+const shape = c => { const n = c.n || 4, d = c.d || 3; return { n, d, k: c.k || n }; };
+const gameName = c => { const { n, d, k } = shape(c); return Array(d).fill(n).join('x') + (k !== n ? 'k' + k : ''); };
+const boardLabel = c => {
+  const { n, d, k } = shape(c), size = Array(d).fill(n).join('×');
+  return n === 15 && d === 2 ? `Гомоку ${size}` : k !== n ? `${size}, ${k} в ряд` : size;
+};
+const netLabel = c => (ARCHS[c.arch] || 'свёртки') + (c.channels ? ` ${c.channels}×${c.blocks}` : '');
+const pct = (a, b) => b ? 100 * a / b : null;
+const fmtDur = s => {
+  if (s == null || !isFinite(s)) return '—';
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return s + ' с';
+  if (s < 3600) return Math.floor(s / 60) + ' мин ' + (s % 60) + ' с';
+  return Math.floor(s / 3600) + ' ч ' + Math.floor(s % 3600 / 60) + ' мин';
+};
+const winRate = (m, opp) => { const e = m.eval && m.eval[opp]; return e ? pct(e.win + e.draw / 2, e.games) : null; };
+const secondRate = (m, opp) => { const e = m.eval && m.eval[opp]; if (!e) return null; const [w, d, l] = e.as_second; return pct(w + d / 2, w + d + l); };
+const series = (ms, fn) => ms.map(m => ({ x: m.iter, y: fn(m) })).filter(p => p.y != null);
+const firstShare = m => m.selfplay && m.selfplay.x_wins + m.selfplay.o_wins ? pct(m.selfplay.x_wins, m.selfplay.x_wins + m.selfplay.o_wins) : null;
+const lastEval = ms => [...ms].reverse().find(m => m.eval);
+
+/* ---------- линейный график: одна ось, тонкие линии, подсказка по наведению ---------- */
+function niceTicks(lo, hi, count) {
+  const span = hi - lo || 1, raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => s >= raw) || raw;
+  const out = [];
+  for (let t = Math.ceil(lo / step - 1e-9) * step; t <= hi + 1e-9; t += step) out.push(+t.toFixed(6));
+  return out;
+}
+function lineChart(el, { series, yMin, yMax, refs = [], unit = '', digits = 0, height = 210 }) {
+  if (!series.some(s => s.points.length)) { el.innerHTML = '<div class="empty">Появится после первых итераций</div>'; return; }
+  const W = el.clientWidth || 320, H = height, m = { l: 38, r: 44, t: 8, b: 24 };
+  const pts = series.flatMap(s => s.points), xs = pts.map(p => p.x);
+  const xMin = Math.min(...xs), xMax = Math.max(Math.max(...xs), xMin + 1);
+  let lo = yMin, hi = yMax;
+  if (lo == null || hi == null) {
+    const ys = pts.map(p => p.y), a = Math.min(...ys), b = Math.max(...ys), pad = Math.max((b - a) * .12, 1e-3);
+    if (lo == null) lo = Math.max(0, a - pad);
+    if (hi == null) hi = b + pad;
+  }
+  const X = x => m.l + (x - xMin) / (xMax - xMin) * (W - m.l - m.r);
+  const Y = y => m.t + (hi - y) / (hi - lo) * (H - m.t - m.b);
+  const fmt = v => v.toFixed(digits) + unit;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img">`;
+  for (const t of niceTicks(lo, hi, 4)) {
+    svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)"/>`;
+    svg += `<text x="${m.l - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="11.5" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${+t.toFixed(3)}</text>`;
+  }
+  svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}" stroke="var(--axis)"/>`;
+  for (const t of niceTicks(xMin, xMax, Math.max(2, Math.floor(W / 90))).filter(Number.isInteger)) svg += `<text x="${X(t)}" y="${H - 7}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${t}</text>`;
+  for (const r of refs) {
+    svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(r.y)}" y2="${Y(r.y)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+    svg += `<text x="${W - m.r - 4}" y="${Y(r.y) - 4}" text-anchor="end" font-size="11.5" fill="var(--ink2)">${r.label}</text>`;
+  }
+  for (const s of series) {
+    if (!s.points.length) continue;
+    const d = s.points.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
+    svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const e = s.points[s.points.length - 1];
+    svg += `<circle cx="${X(e.x)}" cy="${Y(e.y)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+  }
+  const ends = series.filter(s => s.points.length).map(s => { const e = s.points[s.points.length - 1]; return { x: X(e.x), y: Y(e.y), text: fmt(e.y) }; }).sort((a, b) => a.y - b.y);
+  if (ends.every((e, i) => !i || e.y - ends[i - 1].y >= 14)) for (const e of ends) svg += `<text x="${e.x + 8}" y="${e.y + 4}" font-size="12" font-weight="600" fill="var(--ink)">${e.text}</text>`;
+  svg += `<line class="cross" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--axis)" visibility="hidden"/><g class="dots"></g>`;
+  svg += `<rect x="${m.l}" y="${m.t}" width="${Math.max(1, W - m.l - m.r)}" height="${H - m.t - m.b}" fill="transparent" class="hit"/></svg>`;
+  const legend = series.length > 1 ? '<div class="legend">' + series.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join('') + '</div>' : '';
+  el.innerHTML = legend + svg + '<div class="tip" hidden></div>';
+  const hit = el.querySelector('.hit'), tip = el.querySelector('.tip'), cross = el.querySelector('.cross'), dots = el.querySelector('.dots'), svgEl = el.querySelector('svg');
+  const allX = [...new Set(xs)].sort((a, b) => a - b);
+  hit.addEventListener('mousemove', ev => {
+    const box = svgEl.getBoundingClientRect(), px = (ev.clientX - box.left) / box.width * W;
+    const x = allX.reduce((b, c) => Math.abs(X(c) - px) < Math.abs(X(b) - px) ? c : b, allX[0]);
+    cross.setAttribute('x1', X(x)); cross.setAttribute('x2', X(x)); cross.setAttribute('visibility', 'visible');
+    let rows = `<div style="color:var(--ink2)">итерация ${x}</div>`, marks = '';
+    for (const s of series) {
+      const p = s.points.find(q => q.x === x);
+      if (!p) continue;
+      marks += `<circle cx="${X(x)}" cy="${Y(p.y)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+      rows += `<div><i style="background:${s.color}"></i>${s.name}: <b>${fmt(p.y)}</b></div>`;
+    }
+    dots.innerHTML = marks; tip.innerHTML = rows; tip.hidden = false;
+    tip.style.left = Math.min(Math.max(0, X(x) * box.width / W + 12), el.clientWidth - tip.offsetWidth) + 'px';
+    tip.style.top = (svgEl.offsetTop + 6) + 'px';
+  });
+  hit.addEventListener('mouseleave', () => { tip.hidden = true; dots.innerHTML = ''; cross.setAttribute('visibility', 'hidden'); });
+}
+
+/* ---------- доска ---------- */
+let geo = { n: 4, d: 3 };
+function boardsHtml(cellFn) {
+  const { n, d } = geo, side = Math.pow(n, d - 2);
+  let html = '';
+  for (let k = 0; k < side; k++) {
+    const title = d === 2 ? '' : d === 3 ? `Слой ${k + 1}` : `w${Math.floor(k / n) + 1} · z${k % n + 1}`;
+    html += `<div><div class="layer-title">${title}</div><div class="layer" style="grid-template-columns:repeat(${n},1fr)">`;
+    for (let i = 0; i < n * n; i++) html += cellFn(k * n * n + i);
+    html += '</div></div>';
+  }
+  return html;
+}
+function boardColumns(el) {
+  const { n, d } = geo;
+  el.style.gridTemplateColumns = d === 2 ? `minmax(0,${Math.min(420, 120 + 44 * n)}px)` : d === 3 ? `repeat(auto-fit,minmax(${n >= 5 ? 96 : 84}px,1fr))` : `repeat(${n},minmax(0,1fr))`;
+}
+let game = null, gameStep = 0, playTimer = null;
+function drawGame() {
+  if (!game) { $('game-board').innerHTML = '<div class="empty">Появится после первой проверки</div>'; return; }
+  const moves = game.moves.slice(0, gameStep), last = moves[moves.length - 1], owner = {};
+  moves.forEach((c, i) => owner[c] = i);
+  const finished = gameStep === game.moves.length;
+  boardColumns($('game-board'));
+  $('game-board').innerHTML = boardsHtml(c => {
+    if (!(c in owner)) return '<div></div>';
+    const i = owner[c], cls = i % 2 === 0 ? 'x' : 'o', won = finished && game.line.includes(c) ? ' won' : '', lm = c === last && !won ? ' lastmove' : '';
+    return `<div class="${cls}${won}${lm}" title="Ход ${i + 1}">${i % 2 === 0 ? '×' : '○'}</div>`;
+  });
+  $('g-step').textContent = `ход ${gameStep} из ${game.moves.length}`;
+}
+function setGame(g) {
+  if (game && g && game.iter === g.iter && game.moves.length === g.moves.length && game.run === g.run) return;
+  game = g;
+  if (!g) { drawGame(); return; }
+  $('g-slider').max = g.moves.length;
+  gameStep = g.moves.length;
+  $('g-slider').value = gameStep;
+  const vs = g.opponent === 'pure' ? 'поиска без сети' : `бота ${g.opponent}`;
+  $('game-title').textContent = `Партия итерации ${g.iter} против ${vs}`;
+  const side = g.net_first ? 'крестиками, ходит первой' : 'ноликами, ходит второй';
+  const netWon = g.winner !== null && (g.winner === 0) === g.net_first;
+  $('game-note').textContent = `Сеть играет ${side}. ` + (g.winner === null ? 'Ничья.' : netWon ? `Сеть выиграла на ${g.moves.length}-м ходу.` : `Сеть проиграла на ${g.moves.length}-м ходу.`) + ' Обведена выигравшая линия.';
+  drawGame();
+}
+$('g-slider').addEventListener('input', e => { gameStep = +e.target.value; stopPlay(); drawGame(); });
+function stopPlay() { clearInterval(playTimer); playTimer = null; $('g-play').textContent = '▶'; }
+$('g-play').addEventListener('click', () => {
+  if (playTimer) return stopPlay();
+  if (!game) return;
+  if (gameStep >= game.moves.length) gameStep = 0;
+  $('g-play').textContent = '❚❚';
+  playTimer = setInterval(() => { gameStep++; $('g-slider').value = gameStep; drawGame(); if (gameStep >= game.moves.length) stopPlay(); }, 500);
+});
+function drawFirstMove(fm) {
+  if (!fm) { $('first-move').innerHTML = '<div class="empty">Появится после первой проверки</div>'; return; }
+  const max = Math.max(...fm.policy, 0.1);
+  const ramp = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'];
+  const dark = getComputedStyle(document.documentElement).colorScheme === 'dark';
+  if (dark) ramp.reverse();
+  $('fm-scale').style.background = `linear-gradient(90deg, ${ramp[0]}, ${ramp[3]}, ${ramp[6]})`;
+  boardColumns($('first-move'));
+  $('first-move').innerHTML = boardsHtml(c => {
+    const v = fm.policy[c], idx = Math.min(ramp.length - 1, Math.floor(v / max * ramp.length));
+    const color = (idx < 3) !== dark ? '#0b0b0b' : '#fff';
+    return `<div style="background:${ramp[idx]};color:${color}" title="${(v * 100).toFixed(1)}%">${v >= 0.03 && geo.d === 3 ? Math.round(v * 100) : ''}</div>`;
+  });
+  $('fm-max').textContent = (max * 100).toFixed(0) + '%';
+  $('fm-value').textContent = `Оценка пустой доски для первого игрока: ${fm.value >= 0 ? '+' : ''}${fm.value.toFixed(2)} (от −1 до +1).`;
+}
+
+/* ---------- сводка выбранного запуска ---------- */
+function verdict(run) {
+  const l = lastEval(run.metrics);
+  if (!l) return 'Идёт первая проверка силы, первые точки на графиках появятся через пару минут.';
+  const parts = [];
+  for (const o of ['pure', 'tsp', 'hsp', 'osp']) { const r = winRate(l, o); if (r != null) parts.push(`${NAMES[o]} ${r.toFixed(0)}%`); }
+  let text = `Итерация ${l.iter}: ${parts.join(', ')}.`;
+  const second = secondRate(l, 'pure');
+  if (second != null) text += ` Вторым ходом против поиска без сети: ${second.toFixed(0)}%.`;
+  if (run.perfect) { const a = run.perfect['первым'], b = run.perfect['вторым']; text += ` Проверка полным перебором: ${a.blunders + b.blunders} ошибок на ${(a.decisions + b.decisions).toLocaleString('ru')} решений.`; const every = run.perfect.every_position; if (every) text += ` Сеть ходит в ${every.complete ? 'любой возможной позиции' : 'случайных возможных позициях'}, всего ${every.positions.toLocaleString('ru')}: ошибок ${every.mistakes}.`; }
+  return text;
+}
+function stats(run) {
+  const ms = run.metrics, l = lastEval(ms);
+  const card = (hero, label, value, note) => `<div class="card stat ${hero ? 'hero' : ''}"><div class="label">${label}</div><div class="big">${value}</div><div class="note">${note}</div></div>`;
+  const v = o => { const w = l && winRate(l, o); return w == null ? '—' : w.toFixed(0) + '%'; };
+  const rec = o => { const e = l && l.eval && l.eval[o]; return e ? `победы ${e.win}, ничьи ${e.draw}, поражения ${e.loss}` : 'пока нет данных'; };
+  const check = [...ms].reverse().find(m => m.value_check);
+  const main = l && l.eval.pure ? 'pure' : 'tsp';
+  const every = run.perfect && run.perfect.every_position;
+  const hero = every
+    ? card(true, 'Ошибок при точной проверке', every.mistakes.toLocaleString('ru'), `из ${every.positions.toLocaleString('ru')} ${every.complete ? 'всех возможных' : 'случайных'} позиций, проверено полным перебором`)
+    : card(true, main === 'pure' ? 'Победы над поиском без сети' : 'Победы над ботом tsp', v(main), (l ? `Проверка на итерации ${l.iter}. ` : '') + rec(main));
+  const share = check ? firstShare(check) : null;
+  $('stats').innerHTML = hero +
+    card(false, 'Над ботом tsp', v('tsp'), rec('tsp')) +
+    card(false, 'Над ботом hsp', v('hsp'), geo.n === 4 && geo.d === 3 ? `в 2019 году было ${V2019.hsp}%` : rec('hsp')) +
+    card(false, 'Оценка угадывает исход', check && share != null ? (check.value_check.accuracy * 100).toFixed(0) + '%' : '—', !check ? 'пока нет данных' : share == null ? 'все партии были ничьими: угадывать нечего' : `правило «ставить на первого» даёт ${share.toFixed(0)}%`);
+}
+function table(run) {
+  const head = ['Итер.', 'Поиск %', 'tsp %', 'hsp %', 'osp %', 'Старая версия %', 'Оценка %', 'Ошибка политики', 'Ошибка оценки', 'Первый %', 'Длина', 'Симул./с', 'Кэш %', 'Пачка', 'Время'];
+  const f = v => v == null ? '—' : v.toFixed(0);
+  const rows = [...run.metrics].reverse().map(m => {
+    const sp = m.selfplay, t = m.train, c = m.value_check;
+    return [m.iter, f(winRate(m, 'pure')), f(winRate(m, 'tsp')), f(winRate(m, 'hsp')), f(winRate(m, 'osp')), f(winRate(m, 'past')),
+      c ? (c.accuracy * 100).toFixed(0) : '—', t ? t.policy_loss.toFixed(3) : '—', t ? t.value_loss.toFixed(3) : '—',
+      sp ? f(firstShare(m)) : '—', sp ? sp.avg_length.toFixed(1) : '—', sp ? Math.round(sp.sims_per_s).toLocaleString('ru') : '—',
+      sp && sp.cache_hit != null ? (sp.cache_hit * 100).toFixed(0) : '—', sp && sp.avg_batch ? sp.avg_batch.toFixed(0) : '—', fmtDur(m.iter_seconds)];
+  });
+  $('table').innerHTML = '<tr>' + head.map(h => `<th>${h}</th>`).join('') + '</tr>' + rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+}
+function charts(run) {
+  const ms = run.metrics;
+  const is444 = geo.n === 4 && geo.d === 3 && run.name === 'main';
+  const c = run.config || {}, cells = Math.pow(geo.n, geo.d), openings = c.eval_openings != null ? c.eval_openings : cells <= 25 ? 0 : 2;
+  const value = run.perfect && run.perfect.first_move_value;
+  $('bots-note').textContent = 'Половину партий сеть играет первой, половину второй. «Поиск без сети» знает те же правила и серии шахов, но ничему не учился. '
+    + (openings ? 'Партии с ним начинаются с двух случайных ходов, поэтому часть из них может быть решена ещё до первого хода сети. ' : 'Партии с ним начинаются с пустой доски. ')
+    + (value === 0 ? 'На этой доске при идеальной игре ничья, поэтому потолок против сильного соперника 50%. ' : value === 1 ? 'На этой доске при идеальной игре выигрывает первый. ' : '')
+    + (is444 ? 'Пунктир: результат версии 2019 года.' : '');
+  lineChart($('c-bots'), {
+    series: ['pure', 'tsp', 'hsp', 'osp'].map(o => ({ name: NAMES[o], color: COLORS[o], points: series(ms, m => winRate(m, o)) })),
+    yMin: 0, yMax: 100, unit: '%', height: 280,
+    refs: is444 ? [{ y: V2019.osp, label: `2019 год против osp, ${V2019.osp}%` }, { y: V2019.hsp, label: `2019 год против hsp, ${V2019.hsp}%` }] : [],
+  });
+  lineChart($('c-second'), {
+    series: ['pure', 'tsp'].map(o => ({ name: NAMES[o], color: COLORS[o], points: series(ms, m => secondRate(m, o)) })),
+    yMin: 0, yMax: 100, unit: '%',
+  });
+  lineChart($('c-value'), {
+    series: [{ name: 'оценка сети', color: COLORS.main, points: series(ms, m => m.value_check && m.value_check.accuracy * 100) },
+             { name: 'ставить на первого', color: COLORS.control, points: series(ms, firstShare) }],
+    yMin: 0, yMax: 100, unit: '%',
+  });
+  const one = (id, name, fn, opts) => lineChart($(id), { series: [{ name, color: COLORS.main, points: series(ms, fn) }], height: 170, ...opts });
+  one('c-ploss', 'ошибка', m => m.train && m.train.policy_loss, { digits: 2 });
+  one('c-vloss', 'ошибка', m => m.train && m.train.value_loss, { yMin: 0, digits: 2 });
+  const botRate = series(ms, m => m.selfplay && m.selfplay.bot_win_rate), botLen = series(ms, m => m.selfplay && m.selfplay.bot_avg_length);
+  lineChart($('c-xwin'), { series: [{ name: 'первый, сам с собой', color: COLORS.main, points: series(ms, firstShare) }].concat(botRate.length ? [{ name: 'сеть против бота', color: COLORS.tsp, points: botRate }] : []), yMin: 0, yMax: 100, unit: '%', height: 170 });
+  lineChart($('c-len'), { series: [{ name: 'сам с собой', color: COLORS.main, points: series(ms, m => m.selfplay && m.selfplay.games ? m.selfplay.avg_length : null) }].concat(botLen.length ? [{ name: 'с ботом', color: COLORS.tsp, points: botLen }] : []), yMin: 0, digits: 1, height: 170 });
+}
+function progress(state, run) {
+  const st = run.status, ms = run.metrics, running = st.state === 'running';
+  const labels = { running: 'Обучение идёт', stopped: 'Остановлено', finished: 'Завершено', crashed: 'Аварийно остановлено', plateau: 'Рост прекратился, обучение остановлено' };
+  $('detail-title').textContent = `${boardLabel(run.config || {})}: ${netLabel(run.config || {})}`;
+  $('plateau-box').hidden = !st.patience;
+  if (st.patience) $('plateau').textContent = st.best_iter ? `итерация ${st.best_iter}, без роста ${st.plateau_wait || 0} из ${st.patience}` : `копятся проверки, стоп после ${st.patience} без роста`;
+  $('pill-dot').className = 'dot ' + (running ? 'running' : st.state === 'crashed' ? 'crashed' : '');
+  $('pill-text').textContent = run.stop_requested && running ? 'Остановится после этой итерации' : labels[st.state] || st.state;
+  $('stop').hidden = !running;
+  $('stop').disabled = run.stop_requested;
+  const phase = st.phase;
+  $('steps').innerHTML = [['selfplay', '1. Самоигра'], ['training', '2. Обучение сети'], ['evaluation', '3. Проверка силы']]
+    .map(([k, t]) => `<b class="${phase === k ? 'active' : ''}">${t}</b>`).join('');
+  const prev = [...ms].reverse().find(m => m.iter_seconds), prevEval = [...ms].reverse().find(m => m.eval_seconds);
+  const prevSeconds = prev && { selfplay: prev.selfplay.seconds, training: prev.train.seconds, evaluation: prevEval && prevEval.eval_seconds }[phase];
+  const phaseElapsed = state.now - (st.phase_started || state.now);
+  let share = st.total ? Math.min(1, st.done / st.total) : running ? 0 : 1;
+  if (running && prevSeconds) share = Math.max(share, Math.min(0.97, phaseElapsed / prevSeconds));
+  $('bar').style.width = (share * 100).toFixed(1) + '%';
+  let line = PHASES[phase] || phase;
+  if (st.total) line += `: ${st.done} из ${st.total}`;
+  if (prevSeconds && prevSeconds > phaseElapsed) line += `. Этап закончится примерно через ${fmtDur(prevSeconds - phaseElapsed)}`;
+  $('phase-text').textContent = running ? line : st.state === 'finished' ? 'Все итерации пройдены.' : st.state === 'plateau' ? `${st.patience} проверок подряд без роста, поэтому обучение остановилось само. Лучшая версия: итерация ${st.best_iter}.` : 'Сейчас ничего не считается.';
+  $('iter').textContent = `${st.iter}, предел ${st.max_iters}`;
+  const times = ms.filter(m => m.iter_seconds).slice(-8).map(m => m.iter_seconds);
+  const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : null;
+  $('elapsed').textContent = running ? fmtDur(state.now - st.started) : ms.length ? fmtDur(ms[ms.length - 1].elapsed) : '—';
+  $('iter-time').textContent = fmtDur(avg);
+  // Запуск с правилом плато обычно останавливается намного раньше предела итераций
+  const everyCheck = (run.config && run.config.eval_every) || 1;
+  const plateauLeft = st.patience && st.best_iter ? (st.patience - (st.plateau_wait || 0)) * everyCheck : null;
+  $('eta-label').textContent = plateauLeft != null ? 'Остановится, если не будет роста' : 'До предела итераций';
+  $('eta').textContent = !running || !avg ? '—' : fmtDur(avg * (plateauLeft != null ? plateauLeft : st.max_iters - st.iter + 1));
+  $('speed').textContent = prev ? Math.round(prev.selfplay.sims_per_s).toLocaleString('ru') : '—';
+  const err = $('error');
+  err.hidden = st.state !== 'crashed';
+  if (!err.hidden) err.textContent = st.error || 'Процесс обучения завершился неожиданно. Подробности в файле train.log этого запуска.';
+  const hint = $('hint');
+  hint.hidden = running || st.state === 'finished' || st.state === 'plateau';
+  if (!hint.hidden) hint.textContent = 'Продолжить можно с этого места: python train.py --run ' + run.name + ' --resume.';
+}
+
+/* ---------- эксперименты ---------- */
+function score(row) { return ((row.win + row.draw / 2) / (row.win + row.draw + row.loss) * 100).toFixed(0) + '%'; }
+function drawFindings(data) {
+  const f = data.findings || {}, runs = data.runs || {};
+  const blocks = [];
+  const add = (title, text, chartIds, extra) => blocks.push(`<div class="card finding"><h3>${title}</h3><p>${text}</p>${extra || ''}${chartIds.length ? `<div class="charts ${chartIds.length > 1 ? 'c2' : ''}">${chartIds.map(id => `<div class="chart" id="${id}"></div>`).join('')}</div>` : ''}</div>`);
+  add('Ошибка 2019 года: сеть оценки училась не на исходе партии',
+    'Метка зависела только от того, чей ход, а не от победителя. Контрольный запуск воспроизводит ошибку: ошибка оценки падает почти до нуля и выглядит отличным обучением, а прогноз исхода становится хуже монетки.',
+    ['c-ab-loss', 'c-ab-acc']);
+  if (f.tree_vcf) {
+    const rows = f.tree_vcf.vs_tsp.map(r => `<tr><td class="name">Бюджет поиска серии шахов: ${r.budget}</td><td>${r.rate}%</td></tr>`).join('');
+    add('Поиск серии шахов внутри дерева дал самый большой скачок',
+      'Те же веса сети и то же число симуляций. Проверка каждой новой позиции на форсированную победу подняла результат против tsp с 47% до 90%. После переноса этой проверки на C поиск стал даже быстрее, чем без неё: сеть вызывается почти вдвое реже.',
+      [], `<div class="table-wrap"><table><tr><th class="name">Условие</th><th>Против tsp</th></tr>${rows}<tr><td class="name">Бюджет 400, 100 партий</td><td>${f.tree_vcf.budget_400_100_games_vs_tsp}%</td></tr></table></div>`);
+  }
+  if (f.networks_40_iterations) {
+    const rows = f.networks_40_iterations.results.map(r => `<tr><td class="name">${r.a} против: ${r.b}</td><td>${r.win}–${r.draw}–${r.loss}</td><td>${score(r)}</td></tr>`).join('');
+    add('Какая сеть сильнее', 'Все сети обучались с нуля 40 итераций в одинаковых условиях, затем сыграли друг с другом.', ['c-arch'], `<div class="table-wrap"><table><tr><th class="name">Пара</th><th>Счёт</th><th>Итог</th></tr>${rows}</table></div>`);
+  }
+  if (f.random_openings) {
+    add('Что не помогло', `Случайные начала партий: ${f.random_openings.win}–${f.random_openings.draw}–${f.random_openings.loss}. Распространение доказанных побед по дереву: ${f.proof_propagation.win}–${f.proof_propagation.draw}–${f.proof_propagation.loss}. Повышенная цена близкой победы: ${f.discount.win}–${f.discount.draw}–${f.discount.loss}. Эти приёмы в финальную версию не вошли. Более глубокий поиск при игре прибавляет немного: 800 симуляций вместо 100 дают 91% вместо 88% против поиска без сети.`, []);
+  }
+  $('findings').innerHTML = blocks.join('');
+  const v1 = runs.main_v1, control = runs.control_2019;
+  if (v1 && control) {
+    const before = v1.metrics.filter(m => !v1.config.speedup_from_iter || m.iter < v1.config.speedup_from_iter);
+    const pair = fn => [{ name: 'исправленный код', color: COLORS.main, points: series(before, fn) }, { name: 'с ошибкой 2019 года', color: COLORS.control, points: series(control.metrics, fn) }];
+    lineChart($('c-ab-loss'), { series: pair(m => m.train && m.train.value_loss), yMin: 0, digits: 2 });
+    lineChart($('c-ab-acc'), { series: pair(m => m.value_check && m.value_check.accuracy * 100), yMin: 0, yMax: 100, unit: '%' });
+  }
+  const arms = [['arch_resnet', 'свёртки', 'var(--c1)'], ['arch_2019', 'сеть 2019 года', 'var(--c2)'], ['arch_lines', 'свёртки + признаки линий', 'var(--c3)'], ['arch_linenet', 'сеть на линиях', 'var(--c4)']].filter(([k]) => runs[k]);
+  if ($('c-arch') && arms.length) lineChart($('c-arch'), { series: arms.map(([k, name, color]) => ({ name, color, points: series(runs[k].metrics, m => m.iter <= 40 ? winRate(m, 'tsp') : null) })), yMin: 0, yMax: 100, unit: '%' });
+}
+
+/* ---------- общая таблица: всё, что происходит сейчас ---------- */
+const params = new URLSearchParams(location.search);
+let overview = null, seenAt = 0, selected = params.get('run'), lastKey = '', lastRun = null, lastExperiments = null;
+let compareBoard = null, compareRange = 'equal', compareKey = '';
+const chosenRuns = {}, runColor = {};
+const PALETTE = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--main)', 'var(--control)'];
+const RECENT_HOURS = 3, MAX_COMPARED = PALETTE.length;
+const lastPoint = r => r.points[r.points.length - 1];
+const isLive = r => r.status.state === 'running' || r.status.state === 'crashed';
+const inGame = r => overview && overview.models[gameName(r.config)] && overview.models[gameName(r.config)].run === r.name;
+const isCurrent = r => isLive(r) || inGame(r) || overview.now - r.updated < RECENT_HOURS * 3600;
+const num = v => v == null ? '—' : Math.round(v) + '%';
+function stateText(r) {
+  const st = r.status;
+  if (st.state !== 'running') return STATES[st.state] || st.state;
+  if (r.stop_requested) return 'остановится после итерации';
+  const stage = STAGES[st.phase] || st.phase || '';
+  return st.total ? `${stage}, ${st.done} из ${st.total}` : stage;
+}
+function bestText(r) {
+  const st = r.status;
+  if (!st.patience) return '—';
+  const lowered = st.lr_drops_done ? `, шаг снижен ${st.lr_drops_done} из ${st.lr_drops}` : '';
+  return st.best_iter ? `итерация ${st.best_iter}, без роста ${st.plateau_wait || 0} из ${st.patience}${lowered}` : 'копятся проверки';
+}
+function spark(r) {
+  const values = r.points.filter(p => p.tsp != null).slice(-24).map(p => p.tsp);
+  if (values.length < 2) return '';
+  const X = i => 1 + i / (values.length - 1) * 70, Y = v => 19 - v / 100 * 18;
+  return `<svg width="72" height="20" aria-hidden="true" style="vertical-align:middle"><path d="${values.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="var(--c2)" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+function rowHtml(r) {
+  const c = r.config, p = lastPoint(r), every = r.every_position;
+  const exact = every ? `${every.mistakes} ошибок из ${every.positions.toLocaleString('ru')}` : '—';
+  const dot = r.status.state === 'running' ? 'running' : r.status.state === 'crashed' ? 'crashed' : '';
+  return `<tr data-run="${r.name}" tabindex="0" class="${r.name === selected ? 'picked' : ''}">
+    <td class="name"><b>${boardLabel(c)}</b></td>
+    <td class="name">${netLabel(c)}<span class="sub">${r.name}${inGame(r) ? ' <span class="badge">в игре</span>' : ''}</span></td>
+    <td class="name state"><span class="dot ${dot}"></span>${stateText(r)}</td>
+    <td>${r.status.iter}</td><td class="name">${bestText(r)}</td>
+    <td title="${p ? 'итерация ' + p.iter : ''}">${num(p && p.tsp)}</td><td>${num(p && p.tsp_second)}</td><td>${num(p && p.pure)}</td>
+    <td>${spark(r)}</td><td>${exact}</td><td>${fmtDur(r.iter_seconds)}</td></tr>`;
+}
+const OVERVIEW_HEAD = `<tr><th class="name">Доска</th><th class="name">Сеть</th><th class="name">Состояние</th><th>Итерация</th><th class="name">Лучшая версия</th><th>tsp</th><th>tsp вторым</th><th>Поиск</th><th>tsp по ходу</th><th>Точная проверка</th><th>Одна итерация</th></tr>`;
+function setHtml(el, html) { if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } }
+function sortedRuns() {
+  const size = r => { const { n, d, k } = shape(r.config); return d * 1e4 + n * 100 + k; };
+  return [...overview.runs].sort((a, b) => (isLive(b) - isLive(a)) || (size(a) - size(b)) || a.name.localeCompare(b.name));
+}
+function drawOverview() {
+  const runs = sortedRuns(), current = runs.filter(isCurrent), rest = runs.filter(r => !isCurrent(r));
+  const live = runs.filter(r => r.status.state === 'running'), crashed = runs.filter(r => r.status.state === 'crashed');
+  let text = live.length ? `Идёт обучений: ${live.length}.` : 'Сейчас ничего не обучается.';
+  if (crashed.length) text += ` С ошибкой остановились: ${crashed.map(r => r.name).join(', ')}.`;
+  $('summary').textContent = text + ' Нажмите на строку, чтобы открыть запуск подробно. Проценты взяты из последней проверки силы.';
+  setHtml($('overview'), OVERVIEW_HEAD + current.map(rowHtml).join(''));
+  setHtml($('archive'), OVERVIEW_HEAD + rest.map(rowHtml).join(''));
+  $('archive-title').textContent = `Остальные запуски (${rest.length})`;
+  $('archive-box').hidden = !rest.length;
+  const g = overview.gpu;
+  $('gpu').textContent = g ? `Видеокарта: ${g.temp.toFixed(0)} °C, загрузка ${g.util.toFixed(0)}%, память ${(g.used / 1024).toFixed(1)} из ${(g.total / 1024).toFixed(0)} ГБ` : 'Видеокарта: нет данных';
+}
+function selectRun(name) {
+  if (!name || name === selected) return;
+  selected = name; lastKey = ''; game = null;
+  const url = new URL(location.href);
+  url.searchParams.set('run', name);
+  history.replaceState(null, '', url);
+  const r = overview && overview.runs.find(q => q.name === name);
+  if (r) compareBoard = gameName(r.config);
+  drawOverview(); drawCompare(); tick();
+}
+for (const id of ['overview', 'archive']) {
+  $(id).addEventListener('click', e => { const tr = e.target.closest('tr[data-run]'); if (tr) selectRun(tr.dataset.run); });
+  $(id).addEventListener('keydown', e => { const tr = e.target.closest('tr[data-run]'); if (tr && e.key === 'Enter') selectRun(tr.dataset.run); });
+}
+
+/* ---------- сравнение сетей на одной доске ---------- */
+function defaultChosen(runs) {
+  const set = new Set();
+  for (const r of runs.filter(isCurrent).slice(0, MAX_COMPARED)) set.add(r.name);
+  return set;
+}
+function drawCompare() {
+  if (!overview) return;
+  const runs = sortedRuns();
+  const boards = [...new Map(runs.filter(isCurrent).concat(runs).map(r => [gameName(r.config), r])).values()]
+    .sort((a, b) => { const x = shape(a.config), y = shape(b.config); return x.d - y.d || x.n - y.n || x.k - y.k; });
+  if (!compareBoard || !boards.some(r => gameName(r.config) === compareBoard)) compareBoard = boards.length ? gameName(boards[0].config) : null;
+  setHtml($('compare-boards'), boards.map(r => {
+    const key = gameName(r.config), live = runs.some(q => gameName(q.config) === key && q.status.state === 'running');
+    return `<button data-board="${key}" aria-pressed="${key === compareBoard}">${live ? '<span class="dot running"></span>' : ''}${boardLabel(r.config)}</button>`;
+  }).join(''));
+  setHtml($('compare-range'), [['equal', 'На равных итерациях'], ['all', 'Весь путь']].map(([k, label]) => `<button data-range="${k}" aria-pressed="${k === compareRange}">${label}</button>`).join(''));
+  const onBoard = runs.filter(r => gameName(r.config) === compareBoard);
+  const chosen = chosenRuns[compareBoard] || (chosenRuns[compareBoard] = defaultChosen(onBoard));
+  const used = new Set([...chosen].map(n => runColor[n]).filter(Boolean));
+  for (const name of chosen) if (!runColor[name]) { runColor[name] = PALETTE.find(c => !used.has(c)); used.add(runColor[name]); }
+  setHtml($('compare-runs'), onBoard.map(r => {
+    const on = chosen.has(r.name), blocked = !on && chosen.size >= MAX_COMPARED;
+    return `<label title="${r.name}"><input type="checkbox" data-run="${r.name}" ${on ? 'checked' : ''} ${blocked ? 'disabled' : ''}><i style="${on ? `background:${runColor[r.name]}` : ''}"></i>${netLabel(r.config)} <span style="color:var(--muted)">${r.name}</span></label>`;
+  }).join(''));
+  const shown = onBoard.filter(r => chosen.has(r.name));
+  const lastIter = r => { const p = lastPoint(r); return p ? p.iter : 0; };
+  const live = shown.filter(r => r.status.state === 'running');
+  const limit = compareRange === 'all' || !shown.length ? Infinity : live.length ? Math.max(...live.map(lastIter)) : Math.min(...shown.map(lastIter));
+  const key = [compareBoard, compareRange, limit, shown.map(r => `${r.name}:${r.points.length}:${runColor[r.name]}`).join()].join('|');
+  if (key !== compareKey) {
+    compareKey = key;
+    const chart = (id, field) => lineChart($(id), {
+      series: shown.map(r => ({ name: `${netLabel(r.config)}`, color: runColor[r.name], points: r.points.filter(p => p[field] != null && p.iter <= limit).map(p => ({ x: p.iter, y: p[field] })) })),
+      yMin: 0, yMax: 100, unit: '%', height: 230 });
+    chart('c-cmp-tsp', 'tsp'); chart('c-cmp-second', 'tsp_second'); chart('c-cmp-pure', 'pure');
+  }
+  const label = side => { const r = overview.runs.find(q => q.name === side.run); return `${r ? netLabel(r.config) : side.run}<span class="sub">${side.run}, итерация ${side.iter}</span>`; };
+  const matches = overview.matches.filter(m => m.board === compareBoard).reverse();
+  setHtml($('matches'), matches.length
+    ? '<tr><th class="name">Первая сеть</th><th class="name">Вторая сеть</th><th>Счёт</th><th>Итог первой</th><th>Первым ходом</th><th>Вторым ходом</th><th>Симуляций</th></tr>' + matches.map(m => `<tr><td class="name">${label(m.a)}</td><td class="name">${label(m.b)}</td><td>${m.win}–${m.draw}–${m.loss}</td><td>${num(100 * (m.win + m.draw / 2) / m.games)}</td><td>${m.as_first.join('–')}</td><td>${m.as_second.join('–')}</td><td>${m.sims}</td></tr>`).join('')
+    : '<tr><td class="name" style="border:0;color:var(--muted)">На этой доске прямых матчей пока не было.</td></tr>');
+}
+$('compare-boards').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { compareBoard = b.dataset.board; drawCompare(); } });
+$('compare-range').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { compareRange = b.dataset.range; drawCompare(); } });
+$('compare-runs').addEventListener('change', e => {
+  const name = e.target.dataset.run, chosen = chosenRuns[compareBoard];
+  if (e.target.checked) chosen.add(name); else { chosen.delete(name); delete runColor[name]; }
+  drawCompare();
+});
+
+/* ---------- обновление ---------- */
+// Сбой одного блока не должен оставлять на странице данные прошлого запуска в других блоках
+function safely(name, fn) {
+  try { fn(); } catch (error) { console.error('Блок не отрисован: ' + name, error); }
+}
+async function loadOverview() {
+  try {
+    overview = await (await fetch('/api/overview')).json();
+    seenAt = Date.now();
+  } catch (e) { return; }
+  if (!selected && overview.runs.length) {
+    const first = sortedRuns()[0];
+    selected = first.name;
+    compareBoard = gameName(first.config);
+  } else if (!compareBoard) {
+    const r = overview.runs.find(q => q.name === selected);
+    if (r) compareBoard = gameName(r.config);
+  }
+  safely('общая таблица', drawOverview);
+  safely('сравнение', drawCompare);
+}
+function drawLive() {
+  const age = seenAt ? (Date.now() - seenAt) / 1000 : Infinity;
+  const fresh = age < 20;
+  $('live-dot').className = 'dot ' + (fresh ? 'running' : 'crashed');
+  $('live-text').textContent = !seenAt ? 'Нет связи с сервером дашборда' : fresh ? `Обновлено ${Math.round(age)} с назад` : `Нет связи с сервером, данные устарели на ${fmtDur(age)}`;
+}
+async function tick() {
+  if (!selected) return;
+  const asked = selected;
+  let state;
+  try {
+    state = await (await fetch('/api/state?run=' + encodeURIComponent(asked))).json();
+  } catch (e) { return; }
+  if (asked !== selected) return;
+  const run = state.run;
+  if (!run) { $('verdict').textContent = 'Такого запуска нет.'; return; }
+  geo = { n: (run.config && run.config.n) || 4, d: (run.config && run.config.d) || 3 };
+  safely('ход обучения', () => progress(state, run));
+  const key = selected + ':' + run.metrics.length;
+  if (key !== lastKey) {
+    lastKey = key;
+    lastRun = run;
+    safely('итог', () => { $('verdict').textContent = verdict(run); });
+    safely('показатели', () => stats(run));
+    safely('графики', () => charts(run));
+    safely('таблица', () => table(run));
+    safely('партия', () => setGame(run.last_game ? { ...run.last_game, run: selected } : null));
+    safely('первый ход', () => drawFirstMove(run.first_move));
+  }
+}
+async function loadExperiments() {
+  try {
+    lastExperiments = await (await fetch('/api/experiments')).json();
+    if ($('findings-box').open) drawFindings(lastExperiments);
+  } catch (e) { /* покажем при следующем обновлении */ }
+}
+$('findings-box').addEventListener('toggle', () => { if ($('findings-box').open && lastExperiments) drawFindings(lastExperiments); });
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (lastRun) charts(lastRun);
+    compareKey = ''; drawCompare();
+    if (lastExperiments && $('findings-box').open) drawFindings(lastExperiments);
+  }, 150);
+});
+$('stop').addEventListener('click', async () => {
+  if (!confirm(`Остановить запуск ${selected} после текущей итерации? Остальные продолжат работать. Позже его можно будет продолжить с этого места.`)) return;
+  await fetch('/api/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ run: selected }) });
+  tick();
+});
+(async () => {
+  await loadOverview();
+  await tick();
+  loadExperiments();
+  setInterval(tick, 3000);
+  setInterval(loadOverview, 5000);
+  setInterval(drawLive, 1000);
+  setInterval(loadExperiments, 120000);
+})();
+</script>
+</body>
+</html>

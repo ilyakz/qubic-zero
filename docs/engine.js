@@ -324,14 +324,171 @@
     }
     evaluate(pos) {
       const { logits, value } = this.forward(pos);
-      const priors = new Float32Array(this.geo.cells);
+      return { priors: legalPriors(logits, pos), value };
+    }
+  }
+
+  function legalPriors(logits, pos) {
+      const priors = new Float32Array(pos.geo.cells);
       let top = -Infinity;
       for (let c = 0; c < logits.length; c++) if (pos.board[c] === 0 && logits[c] > top) top = logits[c];
       let total = 0;
       for (let c = 0; c < logits.length; c++) if (pos.board[c] === 0) { priors[c] = Math.exp(logits[c] - top); total += priors[c]; }
       for (let c = 0; c < logits.length; c++) priors[c] /= total;
-      return { priors, value };
+      return priors;
+  }
+
+  // --- 4D convolutions: same computation as ConvNet4d in qubic/net.py ---
+  class ConvNet4d {
+    constructor(geo, manifest, buffer) {
+      this.geo = geo;
+      this.c = manifest.channels;
+      this.blocks = manifest.blocks;
+      this.p = {};
+      let offset = 0;
+      const data = new Float32Array(buffer);
+      for (const { name, size } of manifest.params) {
+        this.p[name] = data.subarray(offset, offset + size);
+        offset += size;
+      }
+      this.lineHints = manifest.arch === 'conv4d_lines';
+      this.planes = this.lineHints ? 3 + 2 * (geo.k - 1) : 3;
+      // Соседи клетки куба: своя клетка ядра 3×3×3 для каждого соседа, за краем нули
+      const n = geo.n, side = n * n * n;
+      this.side = side;
+      this.neighbours = [];
+      for (let s = 0; s < side; s++) {
+        const z = Math.floor(s / (n * n)), y = Math.floor(s / n) % n, x = s % n, list = [];
+        for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let d = -1; d <= 1; d++) {
+          if (z + a < 0 || z + a >= n || y + b < 0 || y + b >= n || x + d < 0 || x + d >= n) continue;
+          list.push([(z + a) * n * n + (y + b) * n + x + d, (a + 1) * 9 + (b + 1) * 3 + d + 1]);
+        }
+        this.neighbours.push(list);
+      }
+      // Ядро заранее раскладывается как [шаг по w, клетка ядра, выход, вход]: так внутренний цикл идёт по памяти подряд
+      this.kernels = {};
+      const reorder = (name, cIn, cOut) => {
+        const W = this.p[name], K = new Float32Array(3 * 27 * cOut * cIn);
+        for (let b = 0; b < 3; b++) for (let j = 0; j < cOut; j++) for (let i = 0; i < cIn; i++) for (let k = 0; k < 27; k++) {
+          K[((b * 27 + k) * cOut + j) * cIn + i] = W[((b * cOut + j) * cIn + i) * 27 + k];
+        }
+        this.kernels[name] = K;
+      };
+      reorder('stem.0.conv.weight', this.planes, this.c);
+      for (let b = 0; b < this.blocks; b++) for (const part of ['conv1', 'conv2']) reorder(`blocks.${b}.${part}.conv.weight`, this.c, this.c);
+      const cells = geo.cells, c = this.c;
+      this.input = new Float32Array(cells * this.planes);
+      this.h = new Float32Array(cells * c);
+      this.y = new Float32Array(cells * c);
+      this.z = new Float32Array(cells * c);
     }
+    conv(name, input, output, cIn, cOut) {
+      const K = this.kernels[name], side = this.side, layers = this.geo.n, neighbours = this.neighbours;
+      output.fill(0);
+      for (let w = 0; w < layers; w++) for (let b = 0; b < 3; b++) {
+        // шаг 0 приходит из слоя w-1, шаг 1 из того же слоя, шаг 2 из w+1
+        const source = w + b - 1;
+        if (source < 0 || source >= layers) continue;
+        for (let s = 0; s < side; s++) {
+          const target = (w * side + s) * cOut, list = neighbours[s];
+          for (let q = 0; q < list.length; q++) {
+            const from = (source * side + list[q][0]) * cIn, block = (b * 27 + list[q][1]) * cOut * cIn;
+            for (let j = 0; j < cOut; j++) {
+              const row = block + j * cIn;
+              let sum = 0;
+              for (let i = 0; i < cIn; i++) sum += input[from + i] * K[row + i];
+              output[target + j] += sum;
+            }
+          }
+        }
+      }
+    }
+    batchNorm(name, values, rows, c) {
+      const mean = this.p[name + '.running_mean'], variance = this.p[name + '.running_var'], gamma = this.p[name + '.weight'], beta = this.p[name + '.bias'];
+      for (let j = 0; j < c; j++) {
+        const scale = gamma[j] / Math.sqrt(variance[j] + 1e-5), shift = beta[j], m = mean[j];
+        for (let r = 0; r < rows; r++) { const at = r * c + j; values[at] = (values[at] - m) * scale + shift; }
+      }
+    }
+    fillInput(pos) {
+      const geo = this.geo, input = this.input, planes = this.planes, own = pos.side + 1, opp = 2 - pos.side;
+      input.fill(0);
+      for (let cell = 0; cell < geo.cells; cell++) {
+        const v = pos.board[cell], base = cell * planes;
+        input[base] = v === own ? 1 : 0;
+        input[base + 1] = v === opp ? 1 : 0;
+        input[base + planes - 1] = 1;
+      }
+      if (!this.lineHints) return;
+      const mine = pos.count[pos.side], theirs = pos.count[1 - pos.side], scale = 1 / geo.maxDegree;
+      for (let l = 0; l < geo.lines.length; l++) {
+        let plane = -1;
+        if (theirs[l] === 0 && mine[l] > 0) plane = 2 + (mine[l] - 1) * 2;
+        else if (mine[l] === 0 && theirs[l] > 0) plane = 3 + (theirs[l] - 1) * 2;
+        if (plane < 0 || plane >= planes - 1) continue;
+        const line = geo.lines[l];
+        for (let i = 0; i < line.length; i++) input[line[i] * planes + plane] += scale;
+      }
+    }
+    forward(pos) {
+      const cells = this.geo.cells, c = this.c;
+      let h = this.h;
+      const y = this.y, z = this.z;
+      this.fillInput(pos);
+      this.conv('stem.0.conv.weight', this.input, h, this.planes, c);
+      this.batchNorm('stem.1', h, cells, c);
+      for (let i = 0; i < cells * c; i++) if (h[i] < 0) h[i] = 0;
+      for (let b = 0; b < this.blocks; b++) {
+        const prefix = `blocks.${b}.`;
+        this.conv(prefix + 'conv1.conv.weight', h, y, c, c);
+        this.batchNorm(prefix + 'bn1', y, cells, c);
+        for (let i = 0; i < cells * c; i++) if (y[i] < 0) y[i] = 0;
+        this.conv(prefix + 'conv2.conv.weight', y, z, c, c);
+        this.batchNorm(prefix + 'bn2', z, cells, c);
+        for (let i = 0; i < cells * c; i++) { const v = h[i] + z[i]; h[i] = v > 0 ? v : 0; }
+      }
+      // ходы
+      const W0 = this.p['policy.0.weight'], hidden = new Float32Array(cells * 16);
+      for (let r = 0; r < cells; r++) for (let j = 0; j < 16; j++) {
+        let sum = 0;
+        for (let i = 0; i < c; i++) sum += h[r * c + i] * W0[j * c + i];
+        hidden[r * 16 + j] = sum;
+      }
+      this.batchNorm('policy.1', hidden, cells, 16);
+      const W3 = this.p['policy.3.weight'], b3 = this.p['policy.3.bias'][0], logits = new Float32Array(cells);
+      for (let r = 0; r < cells; r++) {
+        let sum = b3;
+        for (let j = 0; j < 16; j++) { const v = hidden[r * 16 + j]; if (v > 0) sum += v * W3[j]; }
+        logits[r] = sum;
+      }
+      // оценка
+      const Wv = this.p['value_conv.weight'], bv = this.p['value_conv.bias'], pooled = new Float32Array(32);
+      for (let j = 0; j < 16; j++) pooled[16 + j] = -Infinity;
+      for (let r = 0; r < cells; r++) for (let j = 0; j < 16; j++) {
+        let sum = bv[j];
+        for (let i = 0; i < c; i++) sum += h[r * c + i] * Wv[j * c + i];
+        if (sum < 0) sum = 0;
+        pooled[j] += sum;
+        if (sum > pooled[16 + j]) pooled[16 + j] = sum;
+      }
+      for (let j = 0; j < 16; j++) pooled[j] /= cells;
+      const V1 = this.p['value.0.weight'], v1 = this.p['value.0.bias'], V2 = this.p['value.2.weight'], v2 = this.p['value.2.bias'][0];
+      let out = v2;
+      for (let j = 0; j < 64; j++) {
+        let sum = v1[j];
+        for (let i = 0; i < 32; i++) sum += pooled[i] * V1[j * 32 + i];
+        if (sum > 0) out += sum * V2[j];
+      }
+      return { logits, value: Math.tanh(out) };
+    }
+    evaluate(pos) {
+      const { logits, value } = this.forward(pos);
+      return { priors: legalPriors(logits, pos), value };
+    }
+  }
+
+  function makeNet(geo, manifest, buffer) {
+    return manifest.arch === 'conv4d' || manifest.arch === 'conv4d_lines' ? new ConvNet4d(geo, manifest, buffer) : new LineNet(geo, manifest, buffer);
   }
 
   // Network without any knowledge: search and rules only.
@@ -482,7 +639,7 @@
     return { cell: root.moves[best], value: root.N[best] ? root.W[best] / root.N[best] : 0, proven: false, shares: visitShares(root, pos.geo.cells), root };
   }
 
-  const api = { Geometry, geometry, Position, describe, findVcf, vcfFor, bots, LineNet, UniformNet, search, netMove, visitShares };
+  const api = { Geometry, geometry, Position, describe, findVcf, vcfFor, bots, LineNet, ConvNet4d, makeNet, UniformNet, search, netMove, visitShares };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else exportsRoot.Engine = api;
 })(typeof self !== 'undefined' ? self : this);

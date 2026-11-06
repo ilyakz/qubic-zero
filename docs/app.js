@@ -3,8 +3,25 @@ const $ = id => document.getElementById(id);
 
 const TEXT = {
   ru: {
-    title: 'Qubic Zero: крестики-нолики от 2D до 4D',
-    lead: 'Соберите линию раньше соперника: на плоской доске, в кубе и даже в четырёх измерениях. Соперник — нейросеть, которая научилась играть только сама с собой. Всё работает прямо в браузере.',
+    title: 'Крестики-нолики в четырёх измерениях',
+    brand: 'Qubic Zero', chartAria: 'График силы сетей по итерациям обучения', iteration: 'итерация', decimal: ',',
+    aboutRulesTitle: 'Что такое четвёртое измерение', ruleCubes: 'Четыре куба', ruleCubesText: 'Доска это четыре куба 4×4×4. Номер куба и есть четвёртая координата, а проекция выше показывает их один внутри другого.',
+    ruleLine: 'Линия из четырёх', ruleLineText: 'Как и в обычных крестиках-ноликах, надо занять клетки одной линии. Она лежит внутри одного куба или идёт через все четыре, по одной клетке в каждом.',
+    ruleThreat: 'Угрозы отовсюду', ruleThreatText: 'Линий 520, и через клетку их проходит до 15. Партия обычно решается примерно за 14 ходов, хотя клеток 256.',
+    aboutLearnTitle: 'Как сеть научилась играть', aboutLearnText: 'Никто не показывал ей партии людей. Сеть играет сама с собой и с ботами, учится на этих партиях и снова играет. Поиск по дереву считает варианты, а сеть подсказывает ему, какие ходы смотреть и кто выигрывает.',
+    raceAll: 'Счёт против бота tsp, %', raceAllNote: 'tsp ищет форсированные выигрыши и не допускает чужих. Половину партий сеть ходит первой.', raceSecond: 'Против tsp вторым ходом, %', raceSecondNote: 'Самое трудное: на этой доске у первого игрока большое преимущество.',
+    nets: { linenet: 'сеть на линиях', linenet2: 'новая сеть на линиях', conv4d: '4D-свёртки', conv4d_lines: '4D-свёртки и подсказки о линиях', conv2d: 'свёртки', resnet: '3D-свёртки', lines: '3D-свёртки и линии', hybrid: 'гибрид свёрток и линий' },
+    raceNames: { n44: 'сеть на линиях, первая', n44v2: 'новая сеть на линиях', c44: '4D-свёртки', c44l: 'свёртки и подсказки о линиях', c44n: 'то же, новый шум', c44s: 'маленькая, в этой игре' },
+    aboutResultsTitle: 'Результаты на всех досках', aboutResultsText: 'У каждой доски своя сеть. На маленьких досках решатель знает цену каждой позиции, поэтому там результат точный.',
+    colBoard: 'Доска', colCells: 'Клеток', colLines: 'Линий', colPerCell: 'Линий через клетку', colValue: 'Идеальная игра', colNet: 'Сеть', colResult: 'Результат',
+    valueDraw: 'ничья', valueFirst: 'выигрывает первый', vsTsp: 'tsp', vsPure: 'поиск без сети', inTraining: 'сеть ещё обучается', exactResult: (m, n) => `${m} ошибок на ${n.toLocaleString('ru')} решений, проверено перебором`,
+    aboutFindingsTitle: 'Что показали эксперименты',
+    find1: 'Одна строка на 7 лет', find1Text: 'В первой версии 2019 года сеть оценки училась не на исходе партии, а на том, чей ход. Ошибка обучения при этом падала почти до нуля и выглядела отлично.',
+    find2: 'Больше не значит сложнее', find2Text: '5×5×5 вдвое больше 4×4×4, но заканчивается вничью. Похоже, сложность зависит от числа линий через клетку, а не от размера доски.',
+    find3: 'Самая длинная линия самая скучная', find3Text: 'На 5×5 с пятью в ряд второй игрок всегда сводит вничью: каждой линии хватает своей пары клеток. Это доказательство, а не наблюдение.',
+    find4: 'Универсальной сети нет', find4Text: 'На 4×4×4×4 лучше всех сыграли свёртки с подсказками о линиях, а на 9×9 победила простая сеть на линиях, втрое с лишним меньше свёрточной. Для каждой доски сеть выбирали прямые матчи.',
+    readMore: 'Подробнее об обучении и находках в README',
+    lead: 'Займите четыре клетки одной линии на доске 4×4×4×4: 256 клеток и 520 линий. Соперник это нейросеть, которая училась сама, без партий людей. Всё считается прямо в браузере, а если 4D это слишком, есть доски попроще, от 3×3.',
     board: 'Доска', crosses: '× крестики, ходят первыми', noughts: '○ нолики', strength: 'Сила сети', view: 'Вид',
     hints: 'Подсвечивать угрозы', thoughts: 'Показывать мысли сети', peers: 'Показывать линии через клетку',
     newGame: 'Новая партия', undo: 'Отменить ход', evaluation: 'оценка сети', spread: 'Расстояние между слоями',
@@ -18,7 +35,7 @@ const TEXT = {
     how3: 'На доске 4×4×4×4 четвёртое измерение — это номер куба. Клетки на одном месте в разных кубах лежат на одной линии, а линия может идти и наискосок через все четыре куба. Наведите на клетку, чтобы увидеть все линии через неё. Вид «Гиперкуб» показывает то же самое как настоящую проекцию тессеракта: куб внутри куба. Перетаскивайте мышью, чтобы вращать.',
     footer: 'Исходный код и история проекта:',
     you: 'Вы', net: 'Нейросеть', pure: 'Поиск без сети', tsp: 'Бот tsp: ищет серии шахов', hsp: 'Бот hsp: эвристика', osp: 'Бот osp: простой', random: 'Случайные ходы',
-    fast: 'Быстро', medium: 'Средне', strong: 'Сильно', layers: 'Слои', volume: 'Объём', board4d: 'Таблица досок', cubes: 'Четыре куба', tesseract: 'Гиперкуб', cube: 'Куб', rotate4d: 'Вращение в 4D', auto4d: 'само', note4d: 'Четвёртое измерение — это номер куба. Линия лежит внутри одного куба или идёт через все четыре: по одной клетке в каждом.', note4dHyper: 'Те же 256 клеток как проекция настоящего тессеракта: один куб внутри другого. Тяните мышью, чтобы вращать в 3D, а с Shift или за полоску ниже — в четвёртом измерении. Можно раскрутить и отпустить. Пока вы целитесь в клетку, само он не вращается.', demo4d: ['Пример: прямая внутри одного куба', 'Пример: одна и та же клетка в каждом кубе', 'Пример: наискосок через все кубы', 'Пример: главная диагональ, меняются все четыре координаты'], cell4d: (w, z, y, x, count) => `Куб ${w}, слой ${z}, ряд ${y}, клетка ${x}. Линий через неё: ${count}`,
+    fast: 'Быстро', medium: 'Средне', strong: 'Сильно', layers: 'Слои', volume: 'Объём', board4d: 'Таблица досок', cubes: 'Четыре куба', tesseract: 'Гиперкуб', cube: 'Куб', rotate4d: 'Вращение в 4D', auto4d: 'само', note4d: 'Четвёртое измерение — это номер куба. Линия лежит внутри одного куба или идёт через все четыре: по одной клетке в каждом.', note4dHyper: 'Это настоящая проекция тессеракта: каждая точка это клетка, а один куб лежит внутри другого. Тяните мышью, чтобы вращать в 3D, а с Shift или за полоску ниже — в четвёртом измерении. Можно раскрутить и отпустить. Пока вы целитесь в клетку, сам он не вращается.', demo4d: ['Пример: прямая внутри одного куба', 'Пример: одна и та же клетка в каждом кубе', 'Пример: наискосок через все кубы', 'Пример: главная диагональ, меняются все четыре координаты'], cell4d: (w, z, y, x, count) => `Куб ${w}, слой ${z}, ряд ${y}, клетка ${x}. Линий через неё: ${count}`,
     layer: 'Слой', noModel: 'Для этой доски сеть ещё не обучена',
     yourTurn: 'Ваш ход', yourWin: 'Вы можете выиграть прямо сейчас', yourBlock: 'Нужно закрыть угрозу',
     thinking: name => `${name} думает…`, wonBy: (name, ply) => `${name} побеждает на ${ply}-м ходу`, youWon: ply => `Вы выиграли на ${ply}-м ходу!`, draw: 'Ничья: свободных клеток не осталось',
@@ -31,8 +48,25 @@ const TEXT = {
     move: 'ход',
   },
   en: {
-    title: 'Qubic Zero: tic-tac-toe from 2D to 4D',
-    lead: 'Complete a line before your opponent does: on a flat board, in a cube and even in four dimensions. Your opponent is a neural network that learned only by playing against itself. It all runs in your browser.',
+    title: 'Tic-tac-toe in four dimensions',
+    brand: 'Qubic Zero', chartAria: 'Strength of the networks over training iterations', iteration: 'iteration', decimal: '.',
+    aboutRulesTitle: 'What the fourth dimension means', ruleCubes: 'Four cubes', ruleCubesText: 'The board is four 4×4×4 cubes. The number of the cube is the fourth coordinate, and the projection above shows them one inside another.',
+    ruleLine: 'A line of four', ruleLineText: 'As in ordinary tic-tac-toe, you take every cell of one line. It lies inside one cube or runs through all four, one cell in each.',
+    ruleThreat: 'Threats from everywhere', ruleThreatText: 'There are 520 lines, and up to 15 pass through one cell. A game is usually decided after about 14 moves, even with 256 cells.',
+    aboutLearnTitle: 'How the network learned to play', aboutLearnText: 'Nobody showed it human games. The network plays against itself and against bots, learns from those games and plays again. A tree search calculates the moves, and the network tells it which moves to look at and who is winning.',
+    raceAll: 'Score against the tsp bot, %', raceAllNote: 'tsp looks for forced wins and avoids allowing them. The network moves first in half of the games.', raceSecond: 'Against tsp moving second, %', raceSecondNote: 'The hardest part: on this board the first player has a big advantage.',
+    nets: { linenet: 'line network', linenet2: 'new line network', conv4d: '4D convolutions', conv4d_lines: '4D convolutions with line hints', conv2d: 'convolutions', resnet: '3D convolutions', lines: '3D convolutions and lines', hybrid: 'hybrid of convolutions and lines' },
+    raceNames: { n44: 'line network, the first', n44v2: 'new line network', c44: '4D convolutions', c44l: 'convolutions with line hints', c44n: 'same, new noise', c44s: 'small, in this game' },
+    aboutResultsTitle: 'Results on all boards', aboutResultsText: 'Every board has its own network. On small boards a solver knows the value of every position, so the result there is exact.',
+    colBoard: 'Board', colCells: 'Cells', colLines: 'Lines', colPerCell: 'Lines through a cell', colValue: 'Perfect play', colNet: 'Network', colResult: 'Result',
+    valueDraw: 'draw', valueFirst: 'first player wins', vsTsp: 'tsp', vsPure: 'search only', inTraining: 'network still in training', exactResult: (m, n) => `${m} mistakes in ${n.toLocaleString('en')} decisions, checked by a solver`,
+    aboutFindingsTitle: 'What the experiments showed',
+    find1: 'One line, seven years', find1Text: 'In the first version from 2019 the value network learned not from who won but from whose turn it was. Its loss still fell almost to zero and looked great.',
+    find2: 'Bigger does not mean harder', find2Text: '5×5×5 is twice as large as 4×4×4, yet it ends in a draw. Difficulty seems to depend on the number of lines through a cell, not on the size of the board.',
+    find3: 'The longest line is the dullest', find3Text: 'On 5×5 with five in a row the second player can always draw: every line has its own pair of cells. This is a proof, not an observation.',
+    find4: 'There is no universal network', find4Text: 'On 4×4×4×4 convolutions with line hints played best, while on 9×9 a simple line network won, more than three times smaller than the convolutional one. Direct matches chose the network for each board.',
+    readMore: 'More about the training and the findings in the README',
+    lead: 'Take all four cells of one line on a 4×4×4×4 board: 256 cells and 520 lines. Your opponent is a neural network that learned by itself, without human games. It all runs in your browser, and if 4D is too much, there are simpler boards, down to 3×3.',
     board: 'Board', crosses: '× crosses, move first', noughts: '○ noughts', strength: 'Network strength', view: 'View',
     hints: 'Highlight threats', thoughts: 'Show what the network thinks', peers: 'Show lines through a cell',
     newGame: 'New game', undo: 'Undo', evaluation: 'network evaluation', spread: 'Distance between layers',
@@ -46,7 +80,7 @@ const TEXT = {
     how3: 'On the 4×4×4×4 board the fourth dimension is the number of the cube. Cells at the same place in different cubes lie on one line, and a line can also run slantwise through all four cubes. Hover a cell to see every line through it. The Hypercube view shows the same thing as a real projection of a tesseract: a cube inside a cube. Drag to rotate.',
     footer: 'Source code and the story of the project:',
     you: 'You', net: 'Neural network', pure: 'Search without a network', tsp: 'Bot tsp: finds threat sequences', hsp: 'Bot hsp: heuristic', osp: 'Bot osp: simple', random: 'Random moves',
-    fast: 'Fast', medium: 'Medium', strong: 'Strong', layers: 'Layers', volume: 'Volume', board4d: 'Table of boards', cubes: 'Four cubes', tesseract: 'Hypercube', cube: 'Cube', rotate4d: 'Rotate in 4D', auto4d: 'auto', note4d: 'The fourth dimension is the number of the cube. A line lies inside one cube or runs through all four, one cell in each.', note4dHyper: 'The same 256 cells as a projection of a real tesseract: one cube inside another. Drag to rotate in 3D; hold Shift or use the strip below for the fourth dimension. You can flick it and let go. It holds still while you aim at a cell.', demo4d: ['Example: a straight line inside one cube', 'Example: the same cell in every cube', 'Example: slantwise through all the cubes', 'Example: the main diagonal, all four coordinates change'], cell4d: (w, z, y, x, count) => `Cube ${w}, layer ${z}, row ${y}, cell ${x}. Lines through it: ${count}`,
+    fast: 'Fast', medium: 'Medium', strong: 'Strong', layers: 'Layers', volume: 'Volume', board4d: 'Table of boards', cubes: 'Four cubes', tesseract: 'Hypercube', cube: 'Cube', rotate4d: 'Rotate in 4D', auto4d: 'auto', note4d: 'The fourth dimension is the number of the cube. A line lies inside one cube or runs through all four, one cell in each.', note4dHyper: 'This is a real projection of a tesseract: every dot is a cell, and one cube lies inside another. Drag to rotate in 3D; hold Shift or use the strip below for the fourth dimension. You can flick it and let go. It holds still while you aim at a cell.', demo4d: ['Example: a straight line inside one cube', 'Example: the same cell in every cube', 'Example: slantwise through all the cubes', 'Example: the main diagonal, all four coordinates change'], cell4d: (w, z, y, x, count) => `Cube ${w}, layer ${z}, row ${y}, cell ${x}. Lines through it: ${count}`,
     layer: 'Layer', noModel: 'The network has not been trained for this board yet',
     yourTurn: 'Your move', yourWin: 'You can win right now', yourBlock: 'You must block a threat',
     thinking: name => `${name} is thinking…`, wonBy: (name, ply) => `${name} wins on move ${ply}`, youWon: ply => `You won on move ${ply}!`, draw: 'A draw: no cells left',
@@ -65,10 +99,10 @@ const BOARDS = [[3, 2, 3], [4, 2, 4], [5, 2, 5], [5, 2, 4], [7, 2, 5], [9, 2, 5]
 const AGENTS = ['you', 'net', 'pure', 'tsp', 'hsp', 'osp', 'random'];
 const LEVELS = { fast: 25, medium: 80, strong: 300 };
 
-let lang = (() => { try { return localStorage.getItem('lang'); } catch (e) { return null; } })() || ((navigator.language || 'ru').startsWith('ru') ? 'ru' : 'en');
+let lang = (() => { try { return localStorage.getItem('lang'); } catch (e) { return null; } })() || ((navigator.language || 'en').startsWith('ru') ? 'ru' : 'en');
 let t = TEXT[lang];
-let models = {}, geo = Engine.geometry(4, 3), moves = [], state = null;
-let players = ['you', 'net'], level = 'medium', view = 'layers';
+let models = {}, geo = Engine.geometry(4, 4), moves = [], state = null;
+let players = ['you', 'net'], level = 'fast', view = 'tesseract';
 let worker = null, requestId = 0, busy = false, lastInfo = null, shares = null, moveTimer = null;
 let cellEls = [], rotX = 62, rotZ = -38, hovered = -1, hyper = null;
 
@@ -82,7 +116,7 @@ function applyText() {
 }
 
 function drawControls() {
-  $('sizes').innerHTML = [2, 3, 4].map(dim => `<div class="size-group"><span>${dim}D</span>` + BOARDS.filter(b => b[1] === dim).map(([n, d, k]) => {
+  $('sizes').innerHTML = [4, 3, 2].map(dim => `<div class="size-group"><span>${dim}D</span>` + BOARDS.filter(b => b[1] === dim).map(([n, d, k]) => {
     const active = n === geo.n && d === geo.d && k === geo.k, size = Array(d).fill(n).join('×');
     const name = n === 15 ? `${t.gomoku} ${size}` : k !== n ? `${size} · ${t.inRow(k)}` : size;
     return `<button data-n="${n}" data-d="${d}" data-k="${k}" aria-pressed="${active}">${name}</button>`;
@@ -92,7 +126,7 @@ function drawControls() {
     $(id).innerHTML = AGENTS.map(a => `<option value="${a}" ${a === 'net' && !hasNet ? 'disabled' : ''} ${players[side] === a ? 'selected' : ''}>${t[a]}${a === 'net' && !hasNet ? ' — …' : ''}</option>`).join('');
   }
   $('levels').innerHTML = Object.keys(LEVELS).map(k => `<button data-level="${k}" aria-pressed="${level === k}">${t[k]}</button>`).join('');
-  const views = geo.d === 2 ? [] : geo.d === 3 ? [['layers', t.layers], ['volume', t.volume]] : [['cubes', t.cubes], ['tesseract', t.tesseract], ['table', t.board4d]];
+  const views = geo.d === 2 ? [] : geo.d === 3 ? [['layers', t.layers], ['volume', t.volume]] : [['tesseract', t.tesseract], ['cubes', t.cubes], ['table', t.board4d]];
   if (views.length && !views.some(([k]) => k === view)) view = views[0][0];
   $('views').closest('.field').hidden = !views.length;
   $('views').innerHTML = views.map(([k, label]) => `<button data-view="${k}" aria-pressed="${view === k}">${label}</button>`).join('');
@@ -479,6 +513,7 @@ $('sizes').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b) return;
   geo = Engine.geometry(+b.dataset.n, +b.dataset.d, +b.dataset.k);
+  moves = []; state = null;  // старая партия не должна рисоваться на новой доске
   for (const side of [0, 1]) if (players[side] === 'net' && !models[geo.name]) players[side] = 'tsp';
   drawControls();
   buildBoard();
@@ -528,6 +563,7 @@ $('lang').addEventListener('click', () => {
   try { localStorage.setItem('lang', lang); } catch (e) { /* без сохранения */ }
   applyText();
   buildBoard();
+  if (typeof drawSite === 'function') drawSite();
 });
 window.addEventListener('resize', () => { placeVolume(); drawWinLine(true); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (hyper) { hyper.readColors(); hyper.request(); } });

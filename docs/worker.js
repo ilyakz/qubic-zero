@@ -10,7 +10,7 @@ async function loadNet(geo) {
     fetch('models/' + geo.name + '.json').then(r => { if (!r.ok) throw new Error('no model'); return r.json(); }),
     fetch('models/' + geo.name + '.bin').then(r => { if (!r.ok) throw new Error('no model'); return r.arrayBuffer(); }),
   ]);
-  const net = new Engine.LineNet(geo, manifest, buffer);
+  const net = Engine.makeNet(geo, manifest, buffer);
   nets.set(geo.name, net);
   return net;
 }

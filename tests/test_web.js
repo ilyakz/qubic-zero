@@ -77,7 +77,7 @@ for (const file of fs.readdirSync(__dirname).filter(f => f.startsWith('web_fixtu
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, g.name + '.json')));
   const raw = fs.readFileSync(path.join(dir, g.name + '.bin'));
   const buffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-  const net = new Engine.LineNet(g, manifest, buffer);
+  const net = Engine.makeNet(g, manifest, buffer);
   let worstPrior = 0, worstValue = 0, vcfAgree = 0, vcfTotal = 0;
   for (const c of data.cases) {
     const p = new Engine.Position(g, c.moves);

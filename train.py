@@ -45,6 +45,7 @@ def parse_args():
     p.add_argument("--n", type=int, default=4, help="сторона доски")
     p.add_argument("--k", type=int, default=None, help="сколько нужно собрать в ряд; по умолчанию во всю сторону доски")
     p.add_argument("--d", type=int, default=3, help="число измерений")
+    p.add_argument("--init-replay", default=None, help="начать с партий другого запуска, файл replay.npz: иначе первые итерации переобучаются на горстке позиций")
     p.add_argument("--init-from", default=None, help="начать с весов другого запуска: сеть linenet подходит к любому размеру")
     p.add_argument("--max-iters", type=int, default=200)
     p.add_argument("--workers", type=int, default=8, help="процессов, играющих партии")
@@ -60,6 +61,7 @@ def parse_args():
     p.add_argument("--root-safety", type=int, default=0, help="убирать в корне ходы, отдающие серию шахов; бюджет проверки, 0 — выключено")
     p.add_argument("--random-plies", type=int, default=0, help="до скольких случайных ходов в начале партии самоигры, не больше 6")
     p.add_argument("--vcf-budget", type=int, default=400, help="узлов поиска серии шахов на позицию в дереве, 0 — не искать")
+    p.add_argument("--gumbel-width", type=int, default=0, help="сколько ходов рассматривать в корне по Gumbel AlphaZero; 0 — обычный поиск")
     p.add_argument("--c-puct", type=float, default=1.5)
     p.add_argument("--fpu", type=float, default=0.2)
     p.add_argument("--noise-alpha", type=float, default=0.3)
@@ -67,6 +69,10 @@ def parse_args():
     p.add_argument("--steps", type=int, default=200, help="шагов обучения за итерацию")
     p.add_argument("--batch", type=int, default=256)
     p.add_argument("--league", default="", help='доля партий против ботов, например "tsp=0.5,hsp=0.1"')
+    p.add_argument("--eval-against", default=",".join(OPPONENTS), help="с кем проверять силу")
+    p.add_argument("--league-bot-first", type=float, default=0.5, help="в какой доле партий с ботом он ходит первым")
+    p.add_argument("--rival-sims", type=int, default=25, help="симуляций у постоянного соперника в партиях лиги, он там называется rival")
+    p.add_argument("--rival", default=None, help="постоянный соперник на каждой проверке силы: runs/имя@итерация; в счёте он называется past")
     p.add_argument("--patience", type=int, default=0, help="остановиться, если столько проверок подряд нет роста силы; 0 — не останавливаться")
     p.add_argument("--min-delta", type=float, default=1.5, help="какой прирост в процентных пунктах считать ростом")
     p.add_argument("--lr-drops", type=int, default=0,
@@ -117,6 +123,15 @@ def read_metrics(path):
     except OSError:
         pass
     return records
+
+
+def load_rival(spec, device):
+    run, _, iteration = spec.partition("@")
+    with open(os.path.join(run, "config.json")) as f:
+        rival = json.load(f)
+    net = build_net(rival["arch"], geometry(rival.get("n", 4), rival.get("d", 3), rival.get("k")), rival["channels"], rival["blocks"]).to(device).eval()
+    net.load_state_dict(torch.load(os.path.join(run, "nets", f"net_{int(iteration):04d}.pt"), map_location=device, weights_only=True))
+    return net
 
 
 class PlateauWatch:
@@ -374,7 +389,7 @@ def train_network(net, optimizer, scaler, buffer, cfg, iteration, rng, device, s
 
 def eval_tasks(cfg, seeds, with_past=False):
     tasks = []
-    for name in OPPONENTS + (("past",) if with_past else ()):
+    for name in cfg["eval_against"].split(",") + (["past"] if with_past else []):
         for games in split_games(cfg["eval_games"], cfg["workers"]):
             tasks.append({"kind": "match", "opponent": name, "games": games, "seed": seeds()})
     return tasks
@@ -430,6 +445,9 @@ def main():
     elif args.init_from:
         state = torch.load(args.init_from, map_location=device, weights_only=True)
         net.load_state_dict(state["net"] if "net" in state else state)
+        if args.init_replay:
+            with np.load(args.init_replay) as data:
+                buffer = {key: data[key] for key in data.files}
 
     atomic_json(paths["config.json"], {**cfg, "params": sum(p.numel() for p in net.parameters()),
                                        "speedup_from_iter": speedup_from})
@@ -443,6 +461,8 @@ def main():
     seeds = lambda: int(rng.integers(2 ** 62))
     evaluators = {0: Evaluator(net, device, geo)}
     past_net = None
+    if args.rival:
+        evaluators[1] = Evaluator(load_rival(args.rival, device), device, geo)
 
     def log(record):
         with open(paths["metrics.jsonl"], "a") as f:
@@ -463,7 +483,7 @@ def main():
                 watch.add(record["iter"], record["strength"])
     try:
         if start_iter == 1:
-            status.set(phase="baseline", iter=0, done=0, total=args.eval_games * len(OPPONENTS), force=True)
+            status.set(phase="baseline", iter=0, done=0, total=args.eval_games * len(args.eval_against.split(",")), force=True)
             results = pool.run(eval_tasks(cfg, seeds), evaluators)
             log({"iter": 0, "time": time.time(), "elapsed": time.time() - run_started,
                  "eval": merge_scores(results), "first_move": first_move_view(net, device, geo)})
@@ -516,13 +536,15 @@ def main():
             game = None
             if iteration % args.eval_every == 0 or iteration == args.max_iters or past:
                 eval_started = time.time()
-                if past:
+                if args.rival:
+                    past = args.rival
+                elif past:
                     if past_net is None:
                         past_net = build_net(args.arch, geo, args.channels, args.blocks).to(device).eval()
                         evaluators[1] = Evaluator(past_net, device, geo)
                     past_net.load_state_dict(torch.load(past, map_location=device, weights_only=True))
                 status.set(phase="evaluation", done=0, force=True,
-                           total=args.eval_games * (len(OPPONENTS) + (1 if past else 0)))
+                           total=args.eval_games * (len(args.eval_against.split(",")) + (1 if past else 0)))
                 results = pool.run(eval_tasks(cfg, seeds, with_past=bool(past)), evaluators)
                 game = pick_game(results, iteration, geo)
                 record_eval = {"eval": merge_scores(results), "eval_seconds": time.time() - eval_started,

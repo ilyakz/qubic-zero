@@ -40,6 +40,9 @@ def main():
     p.add_argument("--root-safety", type=int, default=None)
     p.add_argument("--opponents", default="osp,hsp,tsp,pure")
     p.add_argument("--out", default=None)
+    p.add_argument("--views", type=int, default=1, help="усреднять ответ сети по стольким поворотам доски")
+    p.add_argument("--play-gumbel", type=int, default=0, help="играть поиском Gumbel с таким числом ходов в корне; соперник-сеть ищет как обычно")
+    p.add_argument("--rival", default=None, help="другая сеть, runs/имя@итерация; в --opponents она называется past")
     args = p.parse_args()
 
     with open(os.path.join(args.run, "config.json")) as f:
@@ -54,14 +57,19 @@ def main():
         net.load_state_dict(torch.load(os.path.join(args.run, "nets", f"net_{args.iter:04d}.pt"), map_location=device, weights_only=True))
         state["iter"] = args.iter
 
-    cfg.update(eval_sims=args.sims, pure_sims=args.pure_sims, workers=args.workers, discount=1.0)
+    cfg.update(eval_sims=args.sims, pure_sims=args.pure_sims, workers=args.workers)
+    cfg.setdefault("discount", 1.0)
+    cfg["play_gumbel"] = args.play_gumbel
     if args.vcf_budget is not None:
         cfg["vcf_budget"] = args.vcf_budget
     if args.root_safety is not None:
         cfg["root_safety"] = args.root_safety
     pool = Pool(cfg, Quiet())
     rng = np.random.default_rng(2026)
-    evaluators = {0: Evaluator(net, device, geo)}
+    evaluators = {0: Evaluator(net, device, geo, args.views)}
+    if args.rival:
+        from compare import load_net
+        evaluators[1] = Evaluator(load_net(args.rival, 0, device)[0], device, geo, args.views)
     report = {"board": geo.name, "iteration": state["iter"], "sims": args.sims, "pure_sims": args.pure_sims, "scores": {}}
     try:
         for name in args.opponents.split(","):

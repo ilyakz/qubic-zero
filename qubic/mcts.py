@@ -172,6 +172,105 @@ def search(evaluator, roots, sims, geo, c_puct=1.5, fpu=0.2, rng=None, noise_alp
     return done
 
 
+class GumbelPlan:
+    """Корень в поиске Gumbel AlphaZero (Danihelka и др., 2022).
+
+    Симуляции делятся последовательным отсевом: сначала понемногу на width ходов, выбранных случайно
+    по весам сети, затем половина худших отбрасывается и так далее. Цель политики считается не по
+    посещениям, а по оценкам ходов: так она улучшается, даже если симуляций меньше, чем возможных ходов.
+    """
+
+    C_VISIT, C_SCALE = 50.0, 0.1
+
+    def __init__(self, root, sims, width, rng, noise_scale=1.0):
+        self.root = root
+        self.sims = sims
+        self.logits = np.log(root.P + 1e-12)
+        self.noise = rng.gumbel(size=len(root.P)) * noise_scale
+        self.value = root.q_sum  # пока поиска не было, это оценка сети
+        width = min(width, len(root.moves))
+        self.active = np.argsort(-(self.logits + self.noise))[:width]
+        self.levels = max(1, math.ceil(math.log2(width))) if width > 1 else 1
+        self.queue = []
+        self._fill()
+
+    def _fill(self):
+        each = max(1, self.sims // (self.levels * len(self.active)))
+        self.queue = [int(a) for _ in range(each) for a in self.active][::-1]
+
+    def next_action(self):
+        if not self.queue:
+            score = (self.logits + self.noise + self.sigma())[self.active]
+            keep = max(2, math.ceil(len(self.active) / 2))
+            self.active = self.active[np.argsort(-score)[:keep]]
+            self._fill()
+        return self.queue.pop()
+
+    def completed_q(self):
+        """Оценки всех ходов с точки зрения корня; у непосещённых — смесь оценки сети и найденных поиском."""
+        root = self.root
+        visited = root.N > 0
+        q = np.zeros(len(root.N))
+        q[visited] = root.W[visited] / root.N[visited]
+        total = root.N.sum()
+        mix = self.value
+        if total > 0:
+            mix = (self.value + total * (root.P[visited] * q[visited]).sum() / max(root.P[visited].sum(), 1e-12)) / (1 + total)
+        q[~visited] = mix
+        return q
+
+    def sigma(self):
+        q = self.completed_q()
+        low, high = q.min(), q.max()
+        return (self.C_VISIT + self.root.N.max()) * self.C_SCALE * (q - low) / max(high - low, 1e-8)
+
+    def policy(self, geo):
+        """Цель обучения политики: веса сети, поправленные оценками поиска."""
+        scores = self.logits + self.sigma()
+        probs = np.exp(scores - scores.max())
+        pi = np.zeros(geo.cells, dtype=np.float32)
+        pi[self.root.moves] = probs / probs.sum()
+        return pi
+
+    def best_move(self):
+        root = self.root
+        scores = self.logits + self.noise + self.sigma()
+        scores[root.N < root.N.max()] = -np.inf
+        return root.moves[int(scores.argmax())]
+
+
+def gumbel_search(evaluator, roots, sims, geo, width, noise_scales, rng, c_puct=1.5, fpu=0.2, vcf_budget=0, discount=1.0, root_safety=0):
+    """Поиск с последовательным отсевом в корне, глубже обычный PUCT. Корни должны быть новыми, без посещений."""
+    unexpanded = [r for r in roots if r.moves is None]
+    if unexpanded:
+        _evaluate(evaluator, unexpanded, geo)
+    if root_safety:
+        for root in roots:
+            remove_unsafe_moves(root, geo, root_safety)
+    plans = [GumbelPlan(root, sims, width, rng, scale) for root, scale in zip(roots, noise_scales)]
+    done = 0
+    for _ in range(sims):
+        leaves, paths = [], []
+        for plan in plans:
+            root = plan.root
+            if root.visits >= sims or len(root.moves) < 2:
+                continue
+            index = plan.next_action()
+            node, path = _descend(root.child(index), geo, c_puct, fpu, vcf_budget)
+            path.insert(0, (root, index))
+            done += 1
+            if node.terminal is not None:
+                _backup(path, node.terminal, discount)
+            else:
+                leaves.append(node)
+                paths.append(path)
+        if leaves:
+            values = _evaluate(evaluator, leaves, geo)
+            for path, value in zip(paths, values):
+                _backup(path, float(value), discount)
+    return plans, done
+
+
 def visit_policy(root, geo):
     """Доли посещений ходов корня как вектор длины cells — цель обучения политики."""
     pi = np.zeros(geo.cells, dtype=np.float32)

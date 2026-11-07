@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .game import outcome_labels
-from .mcts import Node, search, visit_policy
+from .mcts import Node, gumbel_search, search, visit_policy
 
 
 @dataclass
@@ -75,13 +75,14 @@ def _finish_if_decided(game, geo):
 
 def self_play(evaluator, total_games, parallel, sims, rng, geo, temperature_plies=12, c_puct=1.5,
               fpu=0.2, noise_alpha=0.3, noise_eps=0.25, on_progress=None, early_finish=True, vcf_budget=0,
-              random_plies=0, discount=1.0, root_safety=0, league=()):
+              random_plies=0, discount=1.0, root_safety=0, league=(), bot_first=0.5, gumbel_width=0):
     """Играет total_games партий сети и возвращает их записи.
 
     random_plies: партия начинается со случайного числа (от 0 до random_plies) случайных ходов,
     в обучение они не идут. league: список пар (бот, доля партий). В таких партиях сеть играет
     с ботом случайной стороной и учится только на своих ходах: сама с собой она может не увидеть
-    настоящей защиты, если первый игрок побеждает почти всегда.
+    настоящей защиты, если первый игрок побеждает почти всегда. bot_first: доля таких партий,
+    где бот ходит первым и сеть учится защищаться. gumbel_width > 0: поиск и цель политики по Gumbel AlphaZero.
     """
     active, finished = [], []
     started = 0
@@ -93,7 +94,7 @@ def self_play(evaluator, total_games, parallel, sims, rng, geo, temperature_plie
             roll = rng.random()
             for bot, share in league:
                 if roll < share:
-                    game.bot, game.bot_side = bot, int(rng.integers(2))
+                    game.bot, game.bot_side = bot, 0 if rng.random() < bot_first else 1
                     break
                 roll -= share
             active.append(game)
@@ -118,7 +119,22 @@ def self_play(evaluator, total_games, parallel, sims, rng, geo, temperature_plie
                     break
                 game.apply(game.root.forced, geo)
 
-        if searching:
+        if searching and gumbel_width:
+            for game in searching:
+                game.root = Node(game.root.own, game.root.opp)
+                game.root.analyse(geo)
+            scales = [1.0 if len(g.moves) < temperature_plies else 0.0 for g in searching]
+            plans, done = gumbel_search(evaluator, [g.root for g in searching], sims, geo, gumbel_width, scales, rng,
+                                        c_puct, fpu, vcf_budget, discount, root_safety)
+            simulations += done
+            for game, plan in zip(searching, plans):
+                root = game.root
+                game.plies.append(len(game.moves))
+                game.owns.append(root.own)
+                game.opps.append(root.opp)
+                game.pis.append(plan.policy(geo))
+                game.apply(plan.best_move(), geo)
+        elif searching:
             simulations += search(evaluator, [g.root for g in searching], sims, geo, c_puct, fpu, rng,
                                   noise_alpha, noise_eps, vcf_budget, discount, root_safety)
             for game in searching:
@@ -142,12 +158,13 @@ def self_play(evaluator, total_games, parallel, sims, rng, geo, temperature_plie
 class NetAgent:
     """Сеть с поиском. use_vcf: доказанную серию шахов разыгрывает сразу, без поиска."""
 
-    def __init__(self, evaluator, sims, c_puct=1.5, fpu=0.2, use_vcf=True, vcf_budget=0, discount=1.0, root_safety=0):
+    def __init__(self, evaluator, sims, c_puct=1.5, fpu=0.2, use_vcf=True, vcf_budget=0, discount=1.0, root_safety=0, gumbel_width=0):
         self.evaluator, self.sims, self.c_puct, self.fpu = evaluator, sims, c_puct, fpu
         self.use_vcf = use_vcf
         self.vcf_budget = vcf_budget
         self.discount = discount
         self.root_safety = root_safety
+        self.gumbel_width = gumbel_width
 
 
 def play_match(agent_a, agent_b, games, rng, geo, opening_plies=0, on_progress=None):
@@ -191,6 +208,12 @@ def play_match(agent_a, agent_b, games, rng, geo, opening_plies=0, on_progress=N
                     game.apply(int(agent(game.root.own, game.root.opp, rng, geo)), geo)
 
         for agent, group in waiting.values():
+            if agent.gumbel_width:
+                plans, _ = gumbel_search(agent.evaluator, [g.root for g in group], agent.sims, geo, agent.gumbel_width, [0.0] * len(group), rng,
+                                         agent.c_puct, agent.fpu, agent.vcf_budget, agent.discount, agent.root_safety)
+                for game, plan in zip(group, plans):
+                    game.apply(plan.best_move(), geo)
+                continue
             search(agent.evaluator, [g.root for g in group], agent.sims, geo, agent.c_puct, agent.fpu,
                    vcf_budget=agent.vcf_budget, discount=agent.discount, root_safety=agent.root_safety)
             for game in group:

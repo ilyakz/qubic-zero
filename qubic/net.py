@@ -453,18 +453,34 @@ def occupied_mask(x):
 class Evaluator:
     """Считает пачку позиций на видеокарте и отдаёт массивы numpy для поиска."""
 
-    def __init__(self, net, device, geo):
+    def __init__(self, net, device, geo, views=1):
         self.net = net
         self.device = device
         self.geo = geo
         self.positions = 0
+        # views > 1: сеть смотрит на позицию после нескольких поворотов доски, ответы усредняются
+        picks = np.linspace(0, len(geo.symmetries) - 1, views).astype(int)
+        self.perms = torch.from_numpy(geo.symmetries[picks]).to(device) if views > 1 else None
+        self.inverse = torch.argsort(self.perms, dim=1) if views > 1 else None
 
     @torch.inference_mode()
     def __call__(self, owns, opps):
         self.positions += len(owns)
         encoded = self.geo.encode_packed(owns, opps) if isinstance(owns, np.ndarray) else self.geo.encode(owns, opps)
         x = torch.from_numpy(encoded).to(self.device, non_blocking=True)
+        if self.perms is not None:
+            return self._many_views(x)
         with torch.autocast(self.device.type, enabled=self.device.type == "cuda"):
             logits, values = self.net(x)
         probs = F.softmax(logits.float().masked_fill(occupied_mask(x), float("-inf")), dim=1)
         return probs.cpu().numpy(), values.float().cpu().numpy()
+
+    def _many_views(self, x):
+        batch, views = len(x), len(self.perms)
+        flat = x.flatten(2)
+        turned = torch.cat([flat[:, :, perm] for perm in self.perms]).view((batch * views,) + x.shape[1:])
+        with torch.autocast(self.device.type, enabled=self.device.type == "cuda"):
+            logits, values = self.net(turned)
+        probs = F.softmax(logits.float().masked_fill(occupied_mask(turned), float("-inf")), dim=1).view(views, batch, -1)
+        average = sum(probs[i][:, self.inverse[i]] for i in range(views)) / views
+        return average.cpu().numpy(), values.float().view(views, batch).mean(dim=0).cpu().numpy()

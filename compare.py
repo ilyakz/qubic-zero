@@ -58,17 +58,22 @@ def main():
     p.add_argument("--vcf-budget", type=int, default=400)
     p.add_argument("--root-safety", type=int, default=0, help="убирать в корне ходы, отдающие серию шахов; бюджет проверки")
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--views", type=int, default=1, help="усреднять ответ сети по стольким поворотам доски")
     args = p.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     rng = np.random.default_rng(args.seed)
     loaded = {run: load_net(run, args.iter, device) for run in args.runs}
-    evaluators = {run: Evaluator(net, device, geo) for run, (net, geo, _) in loaded.items()}
+    evaluators = {run: Evaluator(net, device, geo, args.views) for run, (net, geo, _) in loaded.items()}
     geo = next(iter(loaded.values()))[1]
+    discounts = {}
+    for run in args.runs:
+        with open(os.path.join(run.partition("@")[0], "config.json")) as f:
+            discounts[run] = json.load(f).get("discount", 1.0)  # в матче сеть ищет так же, как училась
     for i, a in enumerate(args.runs):
         for b in args.runs[i + 1:]:
-            first = NetAgent(CachedEvaluator(evaluators[a]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety)
-            second = NetAgent(CachedEvaluator(evaluators[b]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety)
+            first = NetAgent(CachedEvaluator(evaluators[a]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety, discount=discounts[a])
+            second = NetAgent(CachedEvaluator(evaluators[b]), args.sims, vcf_budget=args.vcf_budget, root_safety=args.root_safety, discount=discounts[b])
             s, _ = play_match(first, second, args.games, rng, geo, opening_plies=2)
             rate = 100 * (s["win"] + s["draw"] / 2) / s["games"]
             print(f"{os.path.basename(a.rstrip('/'))} против {os.path.basename(b.rstrip('/'))}: {s['win']} побед, {s['draw']} ничьих, {s['loss']} поражений = {rate:.0f}%"

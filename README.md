@@ -175,4 +175,6 @@ The search and the training loop follow AlphaZero. The main additions: the leave
 
 This project started from [alpha-zero-general](https://github.com/suragnair/alpha-zero-general) by Surag Nair and contributors: the 2019 code in `legacy/` is built on it. Everything else was written from scratch and is under the [MIT license](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for the details.
 
+I also proposed the 4D game to alpha-zero-general itself: [pull request #338](https://github.com/suragnair/alpha-zero-general/pull/338), with the rules, the network and the trained weights.
+
 Thanks to [Anthropic](https://www.anthropic.com) and [Claude Code](https://claude.com/claude-code) with the Claude Opus 5.5 model, which helped me finish this old project and reach these results.

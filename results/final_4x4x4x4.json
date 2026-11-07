@@ -1,71 +1,71 @@
 {
   "board": "4x4x4x4",
-  "iteration": 90,
+  "iteration": 105,
   "sims": 100,
   "pure_sims": 1000,
   "scores": {
     "osp": {
-      "games": 200,
-      "win": 200,
+      "games": 400,
+      "win": 400,
       "draw": 0,
       "loss": 0,
       "as_first": [
-        100,
+        200,
         0,
         0
       ],
       "as_second": [
-        100,
+        200,
         0,
         0
       ]
     },
     "hsp": {
-      "games": 200,
-      "win": 199,
+      "games": 400,
+      "win": 400,
       "draw": 0,
-      "loss": 1,
+      "loss": 0,
       "as_first": [
-        100,
+        200,
         0,
         0
       ],
       "as_second": [
-        99,
+        200,
         0,
-        1
+        0
       ]
     },
     "tsp": {
-      "games": 200,
-      "win": 138,
+      "games": 400,
+      "win": 388,
       "draw": 0,
-      "loss": 62,
+      "loss": 12,
       "as_first": [
-        100,
+        200,
         0,
         0
       ],
       "as_second": [
-        38,
+        188,
         0,
-        62
+        12
       ]
     },
     "pure": {
-      "games": 200,
-      "win": 198,
+      "games": 400,
+      "win": 400,
       "draw": 0,
-      "loss": 2,
+      "loss": 0,
       "as_first": [
-        100,
+        200,
         0,
         0
       ],
       "as_second": [
-        98,
+        200,
         0,
-        2
+        0
       ]
     }
   }

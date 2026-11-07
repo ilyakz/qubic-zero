@@ -151,13 +151,16 @@ def figure_first_move(run="main"):
 
 def figure_race():
     """Гонка сетей на главной доске 4×4×4×4: одна проверка шумная, поэтому среднее по трём."""
-    runs = [("n44", "line network, the first", CONTROL), ("n44v2", "new line network", C1), ("c44", "4D convolutions", C2),
-            ("c44l", "4D convolutions + line hints", C3), ("c44n", "same + tuned noise", C4), ("c44s", "small, in the game", MAIN)]
-    limit = 170
+    runs = [("n44", "line network, the first", CONTROL), ("c44", "4D convolutions", C2), ("c44n", "same + line hints + tuned noise", C4),
+            ("c44s", "small, before Gumbel", C3), ("x_b48", "larger, Gumbel from scratch", C1), ("x_gl", "small, Gumbel + league, in the game", MAIN)]
+    limit = 225
+    # сеть из игры дообучалась по частям, её итерации идут подряд
+    records = {"x_gl": [{**r, "iter": start + r["iter"]} for part, start, count in (("c44s", 0, 90), ("x_gs", 90, 25), ("x_gl", 115, 105))
+                        for r in metrics(part) if 0 < r["iter"] <= count]}
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
     for ax, title, fn in ((axes[0], "Against the tsp bot, %", win_rate("tsp")), (axes[1], "Against tsp moving second, %", second_rate("tsp"))):
         for run, name, color in runs:
-            xs, ys = series(metrics(run), fn)
+            xs, ys = series(records.get(run) or metrics(run), fn)
             if not xs:
                 continue
             smooth = np.convolve(ys, np.ones(3) / 3, mode="valid")

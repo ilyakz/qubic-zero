@@ -54,7 +54,7 @@ function lineChart(el, series, height) {
   hit.addEventListener('mouseleave', () => { tip.hidden = true; dots.innerHTML = ''; cross.setAttribute('visibility', 'hidden'); });
 }
 
-const RACE_COLORS = { n44: 'var(--control)', n44v2: 'var(--c1)', c44: 'var(--c2)', c44l: 'var(--c3)', c44n: 'var(--c4)', c44s: 'var(--accent)' };
+const RACE_COLORS = { n44: 'var(--control)', c44: 'var(--c2)', c44n: 'var(--c4)', c44s: 'var(--c3)', x_b48: 'var(--c1)', x_gl: 'var(--accent)' };
 
 function drawRace() {
   if (!summary) return;

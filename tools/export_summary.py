@@ -19,7 +19,9 @@ FINAL = {"4x4x4x4": "final_4x4x4x4.json", "4x4x4": "final_4x4x4_strong.json", "5
 # Цена игры, если её не считал наш решатель: 4×4×4 доказана в литературе, 5×5 доказана парной стратегией
 KNOWN_VALUE = {"4x4x4": 1, "5x5": 0}
 # Запуски на графике соперничества сетей на главной доске
-RACE = ["n44", "n44v2", "c44", "c44l", "c44n", "c44s"]
+RACE = ["n44", "c44", "c44n", "c44s", "x_b48", "x_gl"]
+# Сеть из игры дообучалась по частям: запуск, с какой итерации считать, сколько итераций взять
+CHAIN = {"x_gl": [("c44s", 0, 90), ("x_gs", 90, 25), ("x_gl", 115, 105)], "x_b48": [("x_b48", 0, 220)]}
 
 
 def read_json(*parts):
@@ -109,7 +111,10 @@ def main():
         config = read_json("runs", run, "config.json")
         if not config:
             continue
-        points = [[r["iter"], percent(r["eval"]["tsp"]), side(r["eval"]["tsp"]["as_second"])] for r in read_metrics(run) if r.get("eval") and "tsp" in r["eval"]]
+        points = []
+        for part, start, count in CHAIN.get(run, [(run, 0, 10 ** 6)]):
+            points += [[start + r["iter"], percent(r["eval"]["tsp"]), side(r["eval"]["tsp"]["as_second"])] for r in read_metrics(part)
+                       if r.get("eval") and "tsp" in r["eval"] and r["iter"] <= count and (r["iter"] > 0 or start == 0)]
         race.append({"run": run, "arch": config.get("arch"), "channels": config.get("channels"), "blocks": config.get("blocks"), "points": points})
     matches = [m for m in (read_json("results", "matches.json") or []) if m["board"] == "4x4x4x4"]
     with open(os.path.join(ROOT, "docs", "data", "summary.json"), "w") as f:
